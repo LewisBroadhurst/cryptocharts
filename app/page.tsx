@@ -1,6 +1,6 @@
 import LazyChartWorkspace from "@/components/charts/LazyChartWorkspace";
 import { pairFor } from "@/lib/market/pairs";
-import { DEFAULT_EXCHANGE, isExchange } from "@/lib/market/sources";
+import { usableExchange } from "@/lib/market/sources";
 
 export default async function Home({
   searchParams,
@@ -9,7 +9,7 @@ export default async function Home({
 }) {
   const asked = await searchParams;
   const pair = pairFor(asked.pair);
-  const exchange = isExchange(asked.ex) ? asked.ex : DEFAULT_EXCHANGE;
+  const exchange = usableExchange(asked.ex);
 
   return (
     <div className="flex h-dvh flex-col gap-2 p-2 sm:p-3">

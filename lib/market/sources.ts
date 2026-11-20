@@ -15,6 +15,11 @@ export type MarketSource = {
   url: string;
   /** Whether older bars can be fetched page by page as a reader scrolls back. */
   pagesBack: boolean;
+  /**
+   * Whether readers may pick it. An exchange whose terms need written consent
+   * we don't have yet stays in the menu, locked, until it's given.
+   */
+  available: boolean;
   /** Bars oldest first, all starting before `before` (or up to now). */
   history(
     pair: Pair,
@@ -136,6 +141,9 @@ export const coinbase: MarketSource = {
   label: "Coinbase",
   url: "https://www.coinbase.com",
   pagesBack: true,
+  // Coinbase's Market Data Terms bar public display without written consent;
+  // asked for, not yet given (docs/phase-0.md).
+  available: false,
   async history(pair, interval, before, signal) {
     const target = intervalSeconds(interval);
     const base = COINBASE_BASE[interval];
@@ -234,6 +242,7 @@ export const kraken: MarketSource = {
   url: "https://www.kraken.com",
   // Kraken serves only its newest 720 bars, whatever `since` asks for.
   pagesBack: false,
+  available: true,
   async history(pair, interval, before, signal) {
     if (before !== undefined) return [];
     const body = await getJson(
@@ -264,6 +273,10 @@ export const kraken: MarketSource = {
 };
 
 export const SOURCES: Record<Exchange, MarketSource> = { coinbase, kraken };
-export const DEFAULT_EXCHANGE: Exchange = "coinbase";
+export const DEFAULT_EXCHANGE: Exchange = "kraken";
 export const isExchange = (value: unknown): value is Exchange =>
   value === "coinbase" || value === "kraken";
+
+/** The exchange a link asks for, if readers may pick it; otherwise the default. */
+export const usableExchange = (value: unknown): Exchange =>
+  isExchange(value) && SOURCES[value].available ? value : DEFAULT_EXCHANGE;

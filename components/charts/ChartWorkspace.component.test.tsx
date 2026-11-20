@@ -59,7 +59,7 @@ async function tap(fx: number, fy: number, shiftKey = false) {
 async function mount() {
   await page.viewport(1200, 800);
   const screen = await render(
-    <ChartWorkspace initialPair="BTC-USD" initialExchange="coinbase" />,
+    <ChartWorkspace initialPair="BTC-USD" initialExchange="kraken" />,
   );
   await vi.waitFor(() =>
     expect(document.querySelectorAll("canvas").length).toBeGreaterThan(2),
@@ -233,7 +233,7 @@ describe("the chart's menus", () => {
   it("shut when a scroll moves the trigger", async () => {
     const screen = await render(
       <div style={{ height: 3000 }}>
-        <ChartWorkspace initialPair="BTC-USD" initialExchange="coinbase" />
+        <ChartWorkspace initialPair="BTC-USD" initialExchange="kraken" />
       </div>,
     );
     await screen.getByRole("button", { name: "Chart style" }).click();
@@ -247,6 +247,21 @@ describe("the chart's menus", () => {
     await expect
       .element(screen.getByRole("group", { name: "Chart style" }))
       .not.toBeInTheDocument();
+  });
+});
+
+describe("the chart's exchange menu", () => {
+  it("shows Coinbase locked, and picking it leaves the chart on Kraken", async () => {
+    const screen = await mount();
+    await screen.getByRole("button", { name: /^Exchange: Kraken/ }).click();
+    const coinbase = screen.getByRole("button", { name: "Coinbase: coming soon" });
+    await expect.element(coinbase).toHaveAttribute("aria-disabled", "true");
+
+    await coinbase.click({ force: true });
+    await expect
+      .element(screen.getByRole("button", { name: /^Exchange: Kraken/ }))
+      .toBeVisible();
+    expect(new URL(window.location.href).searchParams.get("ex")).toBe("kraken");
   });
 });
 

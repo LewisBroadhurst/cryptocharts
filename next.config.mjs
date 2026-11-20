@@ -4,8 +4,7 @@ const dev = process.env.NODE_ENV !== "production";
 // nothing else is reached, so a script that slipped in has nowhere to send data.
 const CONNECT = [
   "'self'",
-  "https://api.exchange.coinbase.com",
-  "wss://ws-feed.exchange.coinbase.com",
+  // Coinbase joins once it consents (lib/market/sources.ts).
   "https://api.kraken.com",
   "wss://ws.kraken.com",
 ];

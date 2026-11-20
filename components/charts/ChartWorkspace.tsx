@@ -69,6 +69,7 @@ import {
   ExitFullScreenIcon,
   FullScreenIcon,
   IndicatorsIcon,
+  LockIcon,
   RedoIcon,
   StyleIcon,
   UndoIcon,
@@ -714,23 +715,43 @@ export default function ChartWorkspace({
           )}
         >
           {(close) =>
-            Object.values(SOURCES).map((one) => (
-              <PopoverOption
-                key={one.exchange}
-                active={exchange === one.exchange}
-                onPick={() => {
-                  setExchange(one.exchange);
-                  close();
-                }}
-              >
-                {one.label}
-                {!one.pagesBack && (
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    720 bars
-                  </span>
-                )}
-              </PopoverOption>
-            ))
+            Object.values(SOURCES).map((one) =>
+              one.available ? (
+                <PopoverOption
+                  key={one.exchange}
+                  active={exchange === one.exchange}
+                  onPick={() => {
+                    setExchange(one.exchange);
+                    close();
+                  }}
+                >
+                  {one.label}
+                  {!one.pagesBack && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      720 bars
+                    </span>
+                  )}
+                </PopoverOption>
+              ) : (
+                <HoverTip
+                  key={one.exchange}
+                  control
+                  tip={`${one.label} prices are coming once ${one.label} agrees to them being shown here`}
+                >
+                  {/* aria-disabled, not disabled: a disabled button gets no
+                      hover, so its tip could never say why. */}
+                  <button
+                    type="button"
+                    aria-disabled="true"
+                    aria-label={`${one.label}: coming soon`}
+                    className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground"
+                  >
+                    {one.label}
+                    <LockIcon className="ml-auto size-4" />
+                  </button>
+                </HoverTip>
+              ),
+            )
           }
         </ChartPopover>
         <div aria-hidden className="mx-1 h-5 w-px shrink-0 bg-border" />

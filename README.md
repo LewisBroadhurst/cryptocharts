@@ -2,6 +2,8 @@
 
 Free, live crypto charts with drawing tools, indicators, replay and Python backtests that run in your own browser.
 
+Prices come from Kraken. Coinbase is in the menu, locked, until Coinbase agrees to its prices being shown here.
+
 Coming to [cryptocharts.stratdeck.uk](https://cryptocharts.stratdeck.uk). Researching stocks? Try
 [StratDeck](https://www.stratdeck.uk).
 

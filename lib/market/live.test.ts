@@ -7,7 +7,8 @@ import { SOURCES, type LiveUpdate } from "@/lib/market/sources";
 const live = process.env.LIVE === "1";
 
 describe.skipIf(!live)("the exchanges, for real", () => {
-  for (const source of Object.values(SOURCES)) {
+  // Only exchanges readers can pick: a locked one isn't called at all.
+  for (const source of Object.values(SOURCES).filter((one) => one.available)) {
     it(`${source.label} has history for every pair`, async () => {
       const missing: string[] = [];
       for (const pair of PAIRS) {
@@ -38,7 +39,7 @@ describe.skipIf(!live)("the exchanges, for real", () => {
     }, 40_000);
   }
 
-  it("Coinbase pages back for older bars", async () => {
+  it.skipIf(!SOURCES.coinbase.available)("Coinbase pages back for older bars", async () => {
     const newest = await SOURCES.coinbase.history(PAIRS[0], "1D");
     const older = await SOURCES.coinbase.history(PAIRS[0], "1D", newest[0].time);
     expect(older.length).toBeGreaterThan(100);

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { pairFor, searchPairs } from "@/lib/market/pairs";
-import { readCoinbaseRows, readKrakenBars, readKrakenOhlc } from "@/lib/market/sources";
+import {
+  readCoinbaseRows,
+  readKrakenBars,
+  readKrakenOhlc,
+  usableExchange,
+} from "@/lib/market/sources";
 
 // Shapes as the exchanges sent them to the Phase 0 probe (docs/phase-0.md).
 describe("readCoinbaseRows", () => {
@@ -66,6 +71,15 @@ describe("readKrakenBars", () => {
 
   it("ignores other channels", () => {
     expect(readKrakenBars({ channel: "heartbeat" })).toEqual([]);
+  });
+});
+
+describe("usableExchange", () => {
+  it("keeps a link to Kraken, and sends one to locked Coinbase or nowhere to Kraken", () => {
+    expect(usableExchange("kraken")).toBe("kraken");
+    expect(usableExchange("coinbase")).toBe("kraken");
+    expect(usableExchange(undefined)).toBe("kraken");
+    expect(usableExchange("binance")).toBe("kraken");
   });
 });
 
