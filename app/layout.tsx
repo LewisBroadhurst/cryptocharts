@@ -6,7 +6,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site/seo";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Crypto Charts: free live crypto charts",
+  title: "Crypto Charts: live crypto charts",
   description:
     "Free live crypto charts with drawing tools and indicators for Bitcoin, Ethereum, Solana and more.",
   applicationName: SITE_NAME,

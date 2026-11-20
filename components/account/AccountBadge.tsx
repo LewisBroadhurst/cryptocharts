@@ -112,7 +112,7 @@ export default function AccountBadge() {
       href={`${STRATDECK}/account`}
       className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
     >
-      Saved to {state.name ? `${state.name}'s` : "your"} StratDeck account
+      Synced to StratDeck{state.name ? ` · ${state.name}` : ""}
     </a>
   );
 }

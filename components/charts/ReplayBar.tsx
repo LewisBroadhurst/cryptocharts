@@ -94,7 +94,7 @@ export default function ReplayBar({
         aria-live="polite"
         className="min-w-36 border-l border-border px-2 text-xs tabular-nums text-muted-foreground"
       >
-        {caughtUp ? "Caught up: " : ""}
+        {caughtUp ? "Live: " : ""}
         <span className="text-foreground">{chartStamp(replay.at)}</span>
       </p>
       <HoverTip control tip="Back to live">

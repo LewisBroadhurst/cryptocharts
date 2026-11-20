@@ -896,7 +896,7 @@ export default function ChartWorkspace({
                 <HoverTip
                   key={one.exchange}
                   control
-                  tip={`${one.label} prices are coming once ${one.label} agrees to them being shown here`}
+                  tip={`${one.label} prices coming soon`}
                 >
                   {/* aria-disabled, not disabled: a disabled button gets no
                       hover, so its tip could never say why. */}
@@ -984,7 +984,7 @@ export default function ChartWorkspace({
           tip={
             replay
               ? "Back to live"
-              : "Replay: pick a bar, then play the chart forward from it"
+              : "Bar replay"
           }
         >
           <button
@@ -1142,10 +1142,10 @@ export default function ChartWorkspace({
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 text-sm">
               {error ? (
                 <span className="max-w-sm px-4 text-center text-negative">
-                  Couldn&apos;t load {pair.id} from {source.label}: {error}.
+                  Couldn&apos;t load {pair.id} prices from {source.label}.
                   {exchange === "coinbase"
                     ? " Try Kraken from the exchange menu."
-                    : " Try Coinbase from the exchange menu."}
+                    : " Refresh the page to try again."}
                 </span>
               ) : (
                 <span className="text-muted-foreground">
@@ -1214,12 +1214,12 @@ export default function ChartWorkspace({
               [
                 "percent",
                 "%",
-                "Show moves as a percentage of the first visible bar",
+                "Percent scale",
               ],
               [
                 "log",
                 "log",
-                "Log scale: equal moves in percentage take equal height",
+                "Log scale",
               ],
             ] as const
           ).map(([mode, label, tip]) => (

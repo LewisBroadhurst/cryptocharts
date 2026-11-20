@@ -25,7 +25,7 @@ export default async function Home({ searchParams }: Props) {
         <h1 className="text-base font-semibold text-foreground">
           Crypto Charts
           <span className="ml-2 font-normal text-muted-foreground max-sm:hidden">
-            Free live charts for the main coins
+            Live charts for the top coins, free
           </span>
         </h1>
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -34,7 +34,7 @@ export default async function Home({ searchParams }: Props) {
             href="https://www.stratdeck.uk"
             className="text-sm text-subtle-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
-            Researching stocks? Try StratDeck
+            Charting stocks? Try StratDeck
           </a>
         </div>
       </header>

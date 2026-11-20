@@ -20,13 +20,13 @@ export const pairUrl = (pair: Pair): string =>
 export const shareImagePath = (pair: Pair): string => `/og/${pair.id}`;
 
 export const shareImageAlt = (pair: Pair): string =>
-  `${coinLabel(pair)}: free live chart on ${SITE_NAME}`;
+  `${coinLabel(pair)} live price chart on ${SITE_NAME}`;
 
 /** Title, description, canonical address and share card for a pair's page. */
 export function pairMetadata(pair: Pair): Metadata {
   const label = coinLabel(pair);
-  const title = `${label} live chart, free | ${SITE_NAME}`;
-  const description = `A free live ${label} chart in US dollars, with drawing tools, indicators, bar replay and backtests that run in your browser.`;
+  const title = `${label} live price chart | ${SITE_NAME}`;
+  const description = `Live ${pair.base}/USD chart with drawing tools, indicators, bar replay and Python backtests. Free, no sign-up.`;
   const url = pairUrl(pair);
   const image = {
     url: shareImagePath(pair),

@@ -56,7 +56,7 @@ export function shareImage(pair: Pair): ImageResponse {
             borderTop: `2px solid ${RULE}`,
           }}
         >
-          <div style={{ display: "flex", fontSize: 44, color: BODY }}>Free live chart</div>
+          <div style={{ display: "flex", fontSize: 44, color: BODY }}>Live price chart</div>
           <div style={{ display: "flex", fontSize: 30, color: MUTED }}>
             Drawing tools · Indicators · Replay · Backtests
           </div>

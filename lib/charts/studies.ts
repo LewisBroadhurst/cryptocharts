@@ -108,17 +108,17 @@ export const INDICATOR_PRESETS: readonly {
   {
     kind: "bb",
     length: 20,
-    blurb: "A band two standard deviations either side of the 20-bar average.",
+    blurb: "Volatility bands 2 standard deviations around a 20-bar average.",
   },
   {
     kind: "rsi",
     length: 14,
-    blurb: "Momentum from 0 to 100; over 70 is stretched, under 30 washed out.",
+    blurb: "Momentum, 0–100. Above 70 is overbought, below 30 oversold.",
   },
   {
     kind: "macd",
     length: 12,
-    blurb: "The gap between a fast and slow average, against its own signal.",
+    blurb: "Trend momentum: the gap between two EMAs, with a signal line.",
   },
 ];
 
