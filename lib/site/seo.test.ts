@@ -10,9 +10,9 @@ const SITE = "https://cryptocharts.stratdeck.uk";
 describe("pairMetadata", () => {
   it("names Ethereum, says what the reader gets and points at its own page", () => {
     const meta = pairMetadata(pairFor("ETH-USD"));
-    expect(meta.title).toBe("Ethereum (ETH) live chart, free | Crypto Charts");
-    expect(meta.description).toMatch(/free live Ethereum \(ETH\) chart/);
-    expect(meta.description).toMatch(/drawing tools, indicators, bar replay and backtests/);
+    expect(meta.title).toBe("Ethereum (ETH) live price chart | Crypto Charts");
+    expect(meta.description).toMatch(/^Live ETH\/USD chart/);
+    expect(meta.description).toMatch(/drawing tools, indicators, bar replay and Python backtests/);
     expect(meta.alternates?.canonical).toBe(`${SITE}/?pair=ETH-USD`);
     expect(meta.openGraph).toMatchObject({
       url: `${SITE}/?pair=ETH-USD`,
@@ -27,7 +27,7 @@ describe("pairMetadata", () => {
 
   it("keeps Bitcoin at the root", () => {
     const meta = pairMetadata(pairFor("BTC-USD"));
-    expect(meta.title).toBe("Bitcoin (BTC) live chart, free | Crypto Charts");
+    expect(meta.title).toBe("Bitcoin (BTC) live price chart | Crypto Charts");
     expect(meta.alternates?.canonical).toBe(`${SITE}/`);
   });
 
@@ -45,7 +45,7 @@ describe("pairMetadata", () => {
 
   it("canonicalises a lower-case pair and doesn't repeat a symbol that is the name", () => {
     expect(pairMetadata(pairFor("sol-usd")).alternates?.canonical).toBe(`${SITE}/?pair=SOL-USD`);
-    expect(pairMetadata(pairFor("XRP-USD")).title).toBe("XRP live chart, free | Crypto Charts");
+    expect(pairMetadata(pairFor("XRP-USD")).title).toBe("XRP live price chart | Crypto Charts");
   });
 
   it("gives every pair its own title, description, address and image", () => {

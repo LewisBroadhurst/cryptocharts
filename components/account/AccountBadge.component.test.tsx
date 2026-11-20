@@ -60,7 +60,7 @@ describe("AccountBadge", () => {
     const calls = fakeStratDeck({ signedIn: true, name: "Lewis", data: null, updatedAt: null });
     const screen = await render(<AccountBadge />);
     await expect
-      .element(screen.getByRole("link", { name: "Saved to Lewis's StratDeck account" }))
+      .element(screen.getByRole("link", { name: "Synced to StratDeck · Lewis" }))
       .toBeVisible();
     const put = calls.find((call) => call.method === "PUT")!;
     expect(JSON.parse(put.body!)).toEqual({
@@ -79,7 +79,7 @@ describe("AccountBadge", () => {
     });
     localStorage.setItem("cryptocharts.layout.v1", "a");
     const screen = await render(<AccountBadge />);
-    await expect.element(screen.getByText("Saved to your StratDeck account")).toBeVisible();
+    await expect.element(screen.getByText("Synced to StratDeck")).toBeVisible();
     expect(calls.filter((call) => call.method === "PUT")).toHaveLength(0);
 
     localStorage.setItem("cryptocharts.layout.v1", "b");

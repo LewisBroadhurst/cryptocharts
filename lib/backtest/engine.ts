@@ -154,7 +154,7 @@ def _run(code, raw_bars, fee, slip, log):
     exec(compile(code, "strategy.py", "exec"), space)
     on_bar = space.get("on_bar")
     if not callable(on_bar):
-        return {"ok": False, "error": "Define a function on_bar(bar, ctx): it's called once for every bar.", "log": log.lines}
+        return {"ok": False, "error": "Your strategy needs an on_bar(bar, ctx) function.", "log": log.lines}
 
     ctx = Context(bars)
     cash, units, side = START_CASH, 0.0, 0

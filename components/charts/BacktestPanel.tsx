@@ -240,7 +240,7 @@ export default function BacktestPanel({
           )}
           <p role="status" className="text-xs text-muted-foreground">
             {starting
-              ? "Starting Python (about 12 MB the first time)…"
+              ? "Loading Python… (first run only)"
               : sandbox.packages
                 ? `Loading ${sandbox.packages.join(", ")}…`
                 : running
@@ -249,8 +249,7 @@ export default function BacktestPanel({
           </p>
         </div>
         <p className="text-xs text-muted-foreground">
-          Your script runs in your own browser, shut off from the page and the
-          internet. It isn&apos;t sent anywhere.
+          Runs privately in your browser. Your code never leaves this device.
         </p>
 
         <div ref={outcomeRef} className="scroll-mt-3" />
@@ -270,10 +269,10 @@ export default function BacktestPanel({
                 [
                   ["Return", pct(shown.stats.returnPct), shown.stats.returnPct >= 0],
                   ["Buy and hold", pct(shown.stats.buyHoldPct), shown.stats.buyHoldPct >= 0],
-                  ["Worst drop", pct(shown.stats.maxDrawdownPct), false],
+                  ["Max drawdown", pct(shown.stats.maxDrawdownPct), false],
                   ["Trades", String(shown.stats.trades), null],
                   [
-                    "Won",
+                    "Win rate",
                     shown.stats.winRatePct === null ? "–" : `${shown.stats.winRatePct.toFixed(0)}%`,
                     null,
                   ],
