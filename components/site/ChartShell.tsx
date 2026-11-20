@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import AccountBadge from "@/components/account/AccountBadge";
 import LazyChartWorkspace from "@/components/charts/LazyChartWorkspace";
+import { track } from "@/lib/analytics/analytics";
 import { coinLabel, pairForPath } from "@/lib/site/seo";
 
 /**
@@ -35,6 +36,7 @@ export default function ChartShell() {
           <AccountBadge />
           <a
             href="https://www.stratdeck.uk"
+            onClick={() => track("stratdeck_clicked")}
             className="text-sm text-subtle-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             Charting stocks? Try StratDeck

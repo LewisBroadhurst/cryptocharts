@@ -1,0 +1,9 @@
+# gitleaks' own rules, plus one exception.
+[extend]
+useDefault = true
+
+[allowlist]
+description = """PostHog project keys (phc_…) are public by design: they can only send
+events, and PostHog expects them in browser code (lib/analytics/analytics.ts).
+Personal API keys (phx_…) are secret and are still caught."""
+regexes = ['''^phc_[A-Za-z0-9]{40,}$''']
