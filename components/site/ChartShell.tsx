@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import AccountBadge from "@/components/account/AccountBadge";
 import LazyChartWorkspace from "@/components/charts/LazyChartWorkspace";
+import HomeLink from "@/components/site/HomeLink";
 import { track } from "@/lib/analytics/analytics";
 import { coinLabel, pairForPath } from "@/lib/site/seo";
 
@@ -21,10 +21,8 @@ export default function ChartShell() {
   return (
     <>
       <header className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-3 pt-2 sm:px-4 sm:pt-3">
-        <div className="flex min-w-0 items-baseline gap-2">
-          <Link href="/" className="shrink-0 text-base font-semibold text-foreground">
-            Crypto Charts
-          </Link>
+        <div className="flex min-w-0 items-center gap-2">
+          <HomeLink />
           <span aria-hidden className="text-muted-foreground">
             /
           </span>
