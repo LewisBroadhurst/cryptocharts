@@ -7,7 +7,7 @@ import { startAnalytics, track } from "@/lib/analytics/analytics";
 
 /** Counts a visit to each page, and loads the counting once the page has
     settled so it never slows the chart. */
-export default function Analytics() {
+export default function UsageEvents() {
   const pathname = usePathname();
 
   useEffect(() => {
