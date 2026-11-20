@@ -11,3 +11,11 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Private notes and drafts, never committed
+*.local.md
+next-env.d.ts
+*.tsbuildinfo
+test-results/
+playwright-report/
+.claude/
