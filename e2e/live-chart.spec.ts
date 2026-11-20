@@ -29,7 +29,7 @@ test("Bitcoin loads from Kraken and goes live", async ({ page }) => {
 test("Ethereum's page loads its chart, with a heading and text a search engine can read", async ({ page }) => {
   const blocked = watchPolicy(page);
   await page.goto("/ethereum");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Ethereum (ETH) live chart");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Ethereum (ETH) live price chart");
   await expect(page.getByRole("heading", { name: "About Ethereum (ETH)" })).toBeAttached();
   await expectChart(page, "ETH-USD");
   expect(blocked).toEqual([]);
@@ -55,13 +55,13 @@ test("picking another coin goes to its page, keeping the chart as it was", async
   await page.getByRole("textbox", { name: "Search coins" }).fill("sol");
   await page.getByRole("button", { name: /SOL/ }).click();
   await expect(page).toHaveURL(/\/solana$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Solana (SOL) live chart");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Solana (SOL) live price chart");
   await expectChart(page, "SOL-USD");
   // The chart moved coin in place rather than starting again.
   await expect(panel).toBeVisible();
 
   await page.goBack();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Bitcoin (BTC) live chart");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Bitcoin (BTC) live price chart");
 });
 
 test("an old link to Coinbase opens on Kraken and never calls Coinbase", async ({ page }) => {

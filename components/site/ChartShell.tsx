@@ -28,7 +28,7 @@ export default function ChartShell() {
             /
           </span>
           <h1 className="truncate text-base font-normal text-foreground">
-            {coinLabel(pair)} live chart
+            {coinLabel(pair)} live price chart
           </h1>
         </div>
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -37,7 +37,7 @@ export default function ChartShell() {
             href="https://www.stratdeck.uk"
             className="text-sm text-subtle-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
-            Researching stocks? Try StratDeck
+            Charting stocks? Try StratDeck
           </a>
         </div>
       </header>

@@ -79,7 +79,7 @@ export function pairStructuredData(pair: Pair) {
         "@type": "WebPage",
         "@id": url,
         url,
-        name: `${coinLabel(pair)} live chart`,
+        name: `${coinLabel(pair)} live price chart`,
         description: pair.about,
         inLanguage: "en-GB",
         isPartOf: { "@type": "WebSite", "@id": home, url: home, name: SITE_NAME },

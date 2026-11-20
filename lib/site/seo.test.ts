@@ -111,7 +111,7 @@ describe("each coin's page", () => {
     expect(page).toMatchObject({
       "@type": "WebPage",
       url: `${SITE}/ethereum`,
-      name: "Ethereum (ETH) live chart",
+      name: "Ethereum (ETH) live price chart",
       about: { name: "Ethereum", alternateName: "ETH" },
       isPartOf: { url: `${SITE}/` },
     });
