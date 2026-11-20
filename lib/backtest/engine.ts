@@ -234,6 +234,8 @@ export const EXAMPLE_STRATEGY = `# Called once for every bar, oldest first. Orde
 #       ctx.closes(n), ctx.bars
 #       ctx.buy(), ctx.sell(), ctx.close()
 # print() shows in the log.
+# numpy is available: import numpy as np (about 3 MB, loaded the first time
+# a script imports it), e.g. np.std(ctx.closes(20)).
 
 def on_bar(bar, ctx):
     fast, slow = ctx.ema(9), ctx.ema(21)

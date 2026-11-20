@@ -241,7 +241,9 @@ export default function BacktestPanel({
           <p role="status" className="text-xs text-muted-foreground">
             {starting
               ? "Starting Python (about 12 MB the first time)…"
-              : running
+              : sandbox.packages
+                ? `Loading ${sandbox.packages.join(", ")}…`
+                : running
                 ? "Running…"
                 : sandbox.problem ?? ""}
           </p>
