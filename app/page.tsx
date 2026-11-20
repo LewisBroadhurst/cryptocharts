@@ -1,13 +1,20 @@
 import AccountBadge from "@/components/account/AccountBadge";
 import LazyChartWorkspace from "@/components/charts/LazyChartWorkspace";
+import type { Metadata } from "next";
+
 import { pairFor } from "@/lib/market/pairs";
 import { usableExchange } from "@/lib/market/sources";
+import { pairMetadata } from "@/lib/site/seo";
 
-export default async function Home({
-  searchParams,
-}: {
+type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+};
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  return pairMetadata(pairFor((await searchParams).pair));
+}
+
+export default async function Home({ searchParams }: Props) {
   const asked = await searchParams;
   const pair = pairFor(asked.pair);
   const exchange = usableExchange(asked.ex);

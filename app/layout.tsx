@@ -2,13 +2,14 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "@/app/globals.css";
+import { SITE_NAME, SITE_URL } from "@/lib/site/seo";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://cryptocharts.stratdeck.uk"),
+  metadataBase: new URL(SITE_URL),
   title: "Crypto Charts: free live crypto charts",
   description:
     "Free live crypto charts with drawing tools and indicators for Bitcoin, Ethereum, Solana and more.",
-  applicationName: "Crypto Charts",
+  applicationName: SITE_NAME,
   formatDetection: { telephone: false },
 };
 
