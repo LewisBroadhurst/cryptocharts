@@ -34,12 +34,15 @@ export function useBacktestSandbox() {
   const nextId = useRef(1);
   const [status, setStatus] = useState<SandboxStatus>("off");
   const [problem, setProblem] = useState<string | null>(null);
+  /** Packages the running script imports that are downloading, e.g. ["numpy"]. */
+  const [packages, setPackages] = useState<string[] | null>(null);
 
   const settle = useCallback((result: BacktestResult) => {
     const job = waiting.current;
     if (!job) return;
     clearTimeout(job.timer);
     waiting.current = null;
+    setPackages(null);
     job.done(result);
   }, []);
 
@@ -49,6 +52,27 @@ export function useBacktestSandbox() {
     frame.current = null;
   }, []);
 
+  /** Gives up on the waiting job, and ends its worker, after `ms`. */
+  const limit = useCallback(
+    (ms: number, error: string) => {
+      const job = waiting.current;
+      if (!job) return;
+      clearTimeout(job.timer);
+      job.timer = setTimeout(() => {
+        remove();
+        setStatus("off");
+        settle(failure(error));
+      }, ms);
+    },
+    [remove, settle],
+  );
+
+  const runLimit = useCallback(
+    () =>
+      limit(RUN_LIMIT_MS, `Stopped: the script ran for longer than ${RUN_LIMIT_MS / 1000} seconds.`),
+    [limit],
+  );
+
   const send = useCallback(() => {
     const job = waiting.current;
     const target = frame.current?.contentWindow;
@@ -57,22 +81,21 @@ export function useBacktestSandbox() {
     // The frame's origin is opaque, so "*" is the only target that reaches it.
     // What goes there is the script and public prices: nothing private.
     target.postMessage({ type: "run", id: job.id, ...job.job }, "*");
-    job.timer = setTimeout(() => {
-      remove();
-      setStatus("off");
-      settle(
-        failure(
-          `Stopped: the script ran for longer than ${RUN_LIMIT_MS / 1000} seconds.`,
-        ),
-      );
-    }, RUN_LIMIT_MS);
-  }, [remove, settle]);
+    runLimit();
+  }, [runLimit]);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       // Only the frame we made, and only messages we expect from it.
       if (!frame.current || event.source !== frame.current.contentWindow) return;
-      const data = event.data as { type?: unknown; id?: unknown; result?: unknown; error?: unknown };
+      const data = event.data as {
+        type?: unknown;
+        id?: unknown;
+        result?: unknown;
+        error?: unknown;
+        names?: unknown;
+      };
+      const current = data?.id !== undefined && data.id === waiting.current?.id;
       if (data?.type === "ready") {
         clearTimeout(loadTimer.current);
         setStatus("ready");
@@ -82,6 +105,14 @@ export function useBacktestSandbox() {
         setStatus("failed");
         setProblem("Python couldn't start in this browser.");
         settle(failure("Python couldn't start in this browser."));
+      } else if (data?.type === "packages" && current) {
+        // Downloading counts against the load limit, not the script's.
+        const names = Array.isArray(data.names) ? data.names.map(String) : [];
+        setPackages(names);
+        limit(LOAD_LIMIT_MS, `${names.join(", ")} took too long to load. Try again.`);
+      } else if (data?.type === "started" && current) {
+        setPackages(null);
+        runLimit();
       } else if (data?.type === "result") {
         setStatus("ready");
         if (data.id === waiting.current?.id)
@@ -98,7 +129,7 @@ export function useBacktestSandbox() {
       window.removeEventListener("message", onMessage);
       remove();
     };
-  }, [remove, send, settle]);
+  }, [limit, remove, runLimit, send, settle]);
 
   /** Starts Python in the background, so the first run doesn't wait for it. */
   const warm = useCallback(() => {
@@ -138,5 +169,5 @@ export function useBacktestSandbox() {
     settle(failure("Stopped."));
   }, [remove, settle]);
 
-  return { status, problem, warm, run, stop };
+  return { status, problem, packages, warm, run, stop };
 }

@@ -1,5 +1,5 @@
 import { ENGINE_PY } from "@/lib/backtest/engine";
-import { PYODIDE_PATH } from "@/lib/backtest/pyodide";
+import { PYODIDE_PATH, PYTHON_PACKAGES } from "@/lib/backtest/pyodide";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +21,18 @@ export function GET(request: Request) {
   // A classic worker that imports Pyodide's module: Chrome won't start a module
   // worker from a blob in a sandboxed frame. Pyodide refuses classic workers by
   // trying importScripts("data:..."); the policy below blocks data: scripts, so
-  // that check fails and Pyodide starts.
+  // that check fails and Pyodide starts. Packages (numpy) come from the lock
+  // file and folder beside it, on this site, and only when a script imports one.
   const worker = `
+const PACKAGES = ${json(PYTHON_PACKAGES)};
 const ready = import(${json(`${pyodide}pyodide.mjs`)})
-  .then(({ loadPyodide }) => loadPyodide({ indexURL: ${json(pyodide)} }))
+  .then(({ loadPyodide }) =>
+    loadPyodide({
+      indexURL: ${json(pyodide)},
+      lockFileURL: ${json(`${pyodide}pyodide-lock.json`)},
+      packageBaseUrl: ${json(pyodide)},
+    }),
+  )
   .then((py) => {
     py.runPython(${json(ENGINE_PY)});
     return py;
@@ -37,6 +45,30 @@ onmessage = async (event) => {
   const message = event.data;
   if (!message || message.type !== "run") return;
   const py = await ready;
+  let names = [];
+  try {
+    const found = py.pyodide_py.code.find_imports(message.code);
+    names = found.toJs().filter((name) => PACKAGES.includes(name) && !(name in py.loadedPackages));
+    found.destroy();
+  } catch {
+    // Code that doesn't parse: run_backtest says what's wrong with it.
+  }
+  if (names.length) {
+    postMessage({ type: "packages", id: message.id, names });
+    const problems = [];
+    try {
+      await py.loadPackage(names, { messageCallback: () => {}, errorCallback: (text) => problems.push(text) });
+    } catch (error) {
+      problems.push(String(error?.message || error));
+    }
+    const missing = names.filter((name) => !(name in py.loadedPackages));
+    if (missing.length) {
+      const error = "Couldn't load " + missing.join(", ") + ". " + problems.join(" ");
+      postMessage({ type: "result", id: message.id, result: { ok: false, error: error.trim(), log: [] } });
+      return;
+    }
+  }
+  postMessage({ type: "started", id: message.id });
   const out = py.globals.get("run_backtest")(message.code, JSON.stringify(message.bars), message.fee, message.slippage);
   postMessage({ type: "result", id: message.id, result: JSON.parse(out) });
 };`;

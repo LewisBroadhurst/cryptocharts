@@ -31,6 +31,24 @@ async function openBacktest(page: Page) {
 
 const script = (page: Page) => page.getByLabel("Python strategy");
 
+/**
+ * Every request the backtest sandbox makes from here on: its frame and the
+ * worker the script runs in. The chart page's own requests aren't counted.
+ */
+function recordSandboxRequests(page: Page) {
+  const urls: string[] = [];
+  page.context().on("request", (request) => {
+    let from: string;
+    try {
+      from = new URL(request.frame().url(), "http://unknown").pathname;
+    } catch {
+      from = "/sandbox"; // Can't tell where it came from: count it.
+    }
+    if (from === "/sandbox") urls.push(request.url());
+  });
+  return urls;
+}
+
 test("the example strategy runs and shows its trades", async ({ page }) => {
   const panel = await openBacktest(page);
   await panel.getByRole("button", { name: /^Run on 400 bars/ }).click();
@@ -42,13 +60,38 @@ test("the example strategy runs and shows its trades", async ({ page }) => {
   await expect(panel.getByText(/A simulation on past prices/)).toBeVisible();
 });
 
-test("a script that reaches for the network or the page gets nothing out", async ({ page }) => {
-  const outbound: string[] = [];
-  page.on("request", (request) => {
-    if (/example\.com/.test(request.url())) outbound.push(request.url());
+test("a script can import numpy, which comes from the site itself", async ({ page }) => {
+  const requests = recordSandboxRequests(page);
+  const panel = await openBacktest(page);
+  await script(page).fill(`import numpy as np
+
+def on_bar(bar, ctx):
+    if ctx.i == ${rows.length - 1}:
+        print("mean of last 20:", f"{np.mean(ctx.closes(20)):.2f}")
+`);
+  // Hold the wheel back a moment, so the status has time to be seen.
+  await page.context().route(/\/numpy-[^/]*\.whl$/, async (route) => {
+    await new Promise((wait) => setTimeout(wait, 1_500));
+    await route.continue();
   });
+  await panel.getByRole("button", { name: /^Run on/ }).click();
+  await expect(panel.getByRole("status")).toHaveText("Loading numpy…", { timeout: 90_000 });
+  await expect(panel.getByRole("region", { name: "Results" })).toBeVisible({ timeout: 90_000 });
+  await panel.getByText(/Printed output/).click();
+  const last20 = rows.slice(-20).map((row) => Number(row[4]));
+  const mean = last20.reduce((sum, close) => sum + close, 0) / last20.length;
+  await expect(panel.getByText(`mean of last 20: ${mean.toFixed(2)}`)).toBeVisible();
+
+  const pyodide = `${new URL(page.url()).origin}/pyodide/314.0.7/`;
+  expect(requests).toContain(`${pyodide}numpy-2.4.6-cp314-cp314-pyemscripten_2026_0_wasm32.whl`);
+  expect(requests.filter((url) => !url.startsWith(pyodide))).toEqual([]);
+});
+
+test("a script that reaches for the network or the page gets nothing out", async ({ page }) => {
+  const requests = recordSandboxRequests(page);
   const panel = await openBacktest(page);
   await script(page).fill(`import js
+import numpy
 tries = []
 for name in ["fetch", "importScripts"]:
     try:
@@ -71,7 +114,9 @@ def on_bar(bar, ctx):
   await panel.getByText(/Printed output/).click();
   await expect(panel.getByText("page: False storage: False")).toBeVisible();
   await page.waitForTimeout(1_000);
-  expect(outbound).toEqual([]);
+  const pyodide = `${new URL(page.url()).origin}/pyodide/314.0.7/`;
+  expect(requests.some((url) => url.includes("/numpy-"))).toBe(true);
+  expect(requests.filter((url) => !url.startsWith(pyodide))).toEqual([]);
 });
 
 test("a script that never ends is stopped, and the next run works", async ({ page }) => {
