@@ -1,0 +1,2 @@
+minimumReleaseAgeExclude:
+  - '@big-shared/ui@0.1.0'

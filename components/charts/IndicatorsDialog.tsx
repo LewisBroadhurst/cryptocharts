@@ -18,13 +18,13 @@ import {
   type StudyField,
   type StudyKind,
 } from "@/lib/charts/studies";
-import { cn } from "@/lib/utils";
-import Modal from "@/components/base/Modal";
-import ModalHeader from "@/components/base/ModalHeader";
-import { SUBHEAD } from "@/components/base/panelStyles";
-import { Button } from "@/components/ui/button";
-import { DialogContent } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { cn } from "@big-shared/ui/cn";
+import Modal from "@big-shared/ui/modal";
+import ModalHeader from "@big-shared/ui/modal-header";
+import { SUBHEAD } from "@big-shared/ui/panel-styles";
+import { Button } from "@big-shared/ui/button";
+import { DialogContent } from "@big-shared/ui/dialog";
+import { Input } from "@big-shared/ui/input";
 import { ColourPicker } from "@/components/charts/ChartPopover";
 import { CloseIcon, EyeIcon } from "@/components/charts/ChartIcons";
 

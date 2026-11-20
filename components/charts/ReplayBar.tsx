@@ -2,8 +2,8 @@
 
 import { REPLAY_SPEEDS, type Replay, type ReplaySpeed } from "@/lib/charts/replay";
 import { chartStamp } from "@/lib/dates";
-import { cn } from "@/lib/utils";
-import HoverTip from "@/components/base/HoverTip";
+import { cn } from "@big-shared/ui/cn";
+import HoverTip from "@big-shared/ui/hover-tip";
 import {
   CloseIcon,
   PauseIcon,

@@ -9,10 +9,10 @@ import {
   type ReactNode,
 } from "react";
 
-import { cn } from "@/lib/utils";
-import HoverTip from "@/components/base/HoverTip";
-import { PopoverContent } from "@/components/ui/popover";
-import { useShutAway } from "@/hooks/useShutAway";
+import { cn } from "@big-shared/ui/cn";
+import HoverTip from "@big-shared/ui/hover-tip";
+import { PopoverContent } from "@big-shared/ui/popover";
+import { useShutAway } from "@big-shared/ui/use-shut-away";
 
 type TriggerProps = {
   type: "button";

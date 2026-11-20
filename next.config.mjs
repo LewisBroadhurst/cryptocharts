@@ -27,6 +27,8 @@ const CSP = [
 
 /** @type {import('next').NextConfig} */
 const config = {
+  // The shared look and UI primitives ship as TypeScript source.
+  transpilePackages: ["@big-shared/ui"],
   poweredByHeader: false,
   reactStrictMode: true,
   headers: async () => [

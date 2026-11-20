@@ -10,7 +10,7 @@ import {
   type Study,
 } from "@/lib/charts/studies";
 import { signedPct, signOf } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn } from "@big-shared/ui/cn";
 import { CloseIcon, EyeIcon, GearIcon } from "@/components/charts/ChartIcons";
 
 const UP = "text-positive";

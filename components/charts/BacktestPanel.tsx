@@ -9,7 +9,7 @@ import {
 import type { Candle } from "@/lib/data/chart-data";
 import { chartStamp } from "@/lib/dates";
 import { readStoredJson, writeStoredJson } from "@/lib/site/browser-storage";
-import { cn } from "@/lib/utils";
+import { cn } from "@big-shared/ui/cn";
 import { CloseIcon } from "@/components/charts/ChartIcons";
 import EquityChart from "@/components/charts/EquityChart";
 import { useBacktestSandbox } from "@/hooks/useBacktestSandbox";
