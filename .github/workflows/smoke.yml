@@ -4,6 +4,8 @@ name: Live site check
 # failed scheduled run emails the repo owner (GitHub's default notification for
 # scheduled workflows), and that email is the alert.
 on:
+  push:
+    branches: [claude/daily-live-check-a734bd] # TEMP: verify before merge
   schedule:
     - cron: "17 7 * * *"
   workflow_dispatch:
