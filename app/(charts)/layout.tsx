@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 
 import ChartShell from "@/components/site/ChartShell";
+import SiteFooter from "@/components/site/SiteFooter";
 
 /**
- * Every coin's page: the chart and its heading, which stay mounted as the
- * reader moves from coin to coin, then the page's own text.
+ * Every chart page, a coin's or one of its indicator and backtest pages: the
+ * chart and its heading, which stay mounted as the reader moves between them,
+ * then the page's own text.
  */
 export default function ChartsLayout({ children }: { children: ReactNode }) {
   return (
@@ -13,11 +15,7 @@ export default function ChartsLayout({ children }: { children: ReactNode }) {
         <ChartShell />
         {children}
       </main>
-      <footer className="mx-auto w-full max-w-5xl shrink-0 px-3 pb-4 text-xs text-muted-foreground sm:px-4">
-        Charts and prices for information only, not advice or an offer to buy or
-        sell anything. Prices come from the exchange shown on the chart. We count
-        visits and which tools get used, anonymously and without cookies.
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

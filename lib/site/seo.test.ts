@@ -65,8 +65,13 @@ describe("pairMetadata", () => {
 });
 
 describe("sitemap", () => {
-  it("lists the home page and each pair's page once", () => {
+  it("lists the home page and each pair's page once, then the indicator pages", () => {
     const urls = sitemap().map((entry) => entry.url);
+    expect(urls).toContain(`${SITE}/indicators/rsi`);
+    expect(urls).toContain(`${SITE}/bitcoin/rsi`);
+    expect(urls).toContain(`${SITE}/solana/backtest/golden-cross`);
+    expect(new Set(urls).size).toBe(urls.length);
+    urls.splice(PAIRS.length);
     expect(urls).toContain(`${SITE}/`);
     expect(urls).toContain(`${SITE}/ethereum`);
     expect(urls).toContain(`${SITE}/bitcoin-cash`);

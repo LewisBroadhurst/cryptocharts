@@ -40,6 +40,7 @@ const money = (value: number) =>
   `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
 export default function BacktestPanel({
+  script,
   bars,
   label,
   upTo,
@@ -47,6 +48,9 @@ export default function BacktestPanel({
   onResult,
   onClose,
 }: {
+  /** A page's own strategy, shown in place of the reader's saved script and
+      never saved over it. */
+  script?: string;
   bars: readonly Candle[];
   /** The pair and interval tested, e.g. "BTC-USD · 1h". */
   label: string;
@@ -56,7 +60,7 @@ export default function BacktestPanel({
   onResult: (result: BacktestResult | null) => void;
   onClose: () => void;
 }) {
-  const [code, setCode] = useState(loadScript);
+  const [code, setCode] = useState(() => script ?? loadScript());
   const [costs, setCosts] = useState(loadCosts);
   const [running, setRunning] = useState(false);
   const [uploadProblem, setUploadProblem] = useState<string | null>(null);
@@ -69,8 +73,8 @@ export default function BacktestPanel({
   useEffect(() => warm(), [warm]);
 
   useEffect(() => {
-    writeStoredJson(SCRIPT_KEY, code);
-  }, [code]);
+    if (script === undefined) writeStoredJson(SCRIPT_KEY, code);
+  }, [code, script]);
   useEffect(() => {
     writeStoredJson(COSTS_KEY, costs);
   }, [costs]);
