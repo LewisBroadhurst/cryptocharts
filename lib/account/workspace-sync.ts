@@ -136,12 +136,14 @@ export function mergeWorkspaces(
   return merged;
 }
 
-/** StratDeck's sign-in, coming back to this chart afterwards. */
-export function signInHref(search: string): string {
+/** StratDeck's sign-in, coming back to this chart afterwards. The coin is
+    the page's, `pair`; StratDeck sends the reader back to `/?pair=`, which
+    redirects to the coin's page. */
+export function signInHref(search: string, pair?: string): string {
   const here = new URLSearchParams(search);
   const back = new URLSearchParams();
   for (const name of ["pair", "ex"]) {
-    const value = here.get(name);
+    const value = name === "pair" ? (pair ?? here.get(name)) : here.get(name);
     if (value) back.set(name, value);
   }
   const query = back.toString();

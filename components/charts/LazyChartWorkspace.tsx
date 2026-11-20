@@ -1,8 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 
+import { workspaceSearch } from "@/components/charts/workspaceAddress";
 import { WORKSPACE_FRAME } from "@/components/charts/workspaceStyles";
+import type { Pair } from "@/lib/market/pairs";
+import { pairPath } from "@/lib/site/seo";
 
 function WorkspaceLoading() {
   return (
@@ -15,9 +19,23 @@ function WorkspaceLoading() {
   );
 }
 
-const LazyChartWorkspace = dynamic(
+const ChartWorkspace = dynamic(
   () => import("@/components/charts/ChartWorkspace"),
   { ssr: false, loading: WorkspaceLoading },
 );
 
-export default LazyChartWorkspace;
+/** The chart, drawn in the browser only. Picking another coin goes to that
+    coin's page, so the address, heading and text below always match it. */
+export default function LazyChartWorkspace({ pair }: { pair: string }) {
+  const router = useRouter();
+  return (
+    <ChartWorkspace
+      pair={pair}
+      // The chart is where the reader is: stay there rather than scroll to the
+      // new page's text.
+      onPickPair={(next: Pair) =>
+        router.push(`${pairPath(next)}${workspaceSearch()}`, { scroll: false })
+      }
+    />
+  );
+}

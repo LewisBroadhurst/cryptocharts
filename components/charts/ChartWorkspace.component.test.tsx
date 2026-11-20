@@ -31,6 +31,7 @@ vi.mock("@/hooks/useMarketBars", () => ({
 }));
 
 const SAVED = "cryptocharts.drawings.v1:BTC-USD";
+const picked = vi.fn();
 const saved = () => JSON.parse(localStorage.getItem(SAVED) ?? "[]");
 
 function pane() {
@@ -59,7 +60,7 @@ async function tap(fx: number, fy: number, shiftKey = false) {
 async function mount() {
   await page.viewport(1200, 800);
   const screen = await render(
-    <ChartWorkspace initialPair="BTC-USD" initialExchange="kraken" />,
+    <ChartWorkspace pair="BTC-USD" onPickPair={picked} />,
   );
   await vi.waitFor(() =>
     expect(document.querySelectorAll("canvas").length).toBeGreaterThan(2),
@@ -126,7 +127,8 @@ describe("ChartWorkspace", () => {
     ]);
   });
 
-  it("keeps drawings under the pair they were drawn on when the chart moves to another", async () => {
+  it("hands a picked coin to the page, then shows it with its own drawings", async () => {
+    picked.mockClear();
     const screen = await mount();
     await screen.getByRole("button", { name: "Trend line" }).click();
     await tap(0.2, 0.7);
@@ -136,12 +138,19 @@ describe("ChartWorkspace", () => {
     await screen.getByRole("button", { name: /^Pair: BTC-USD/ }).click();
     await userEvent.fill(screen.getByRole("textbox", { name: "Search coins" }), "eth");
     await screen.getByRole("button", { name: /ETH/ }).click();
-    await expect
-      .poll(() => new URL(window.location.href).searchParams.get("pair"))
-      .toBe("ETH-USD");
+    expect(picked).toHaveBeenCalledOnce();
+    expect(picked.mock.calls[0][0].id).toBe("ETH-USD");
+
+    // The page moves to Ethereum; the same chart, still mounted, follows.
+    await screen.rerender(<ChartWorkspace pair="ETH-USD" onPickPair={picked} />);
+    await expect.element(screen.getByRole("button", { name: /^Pair: ETH-USD/ })).toBeVisible();
+    await screen.getByRole("button", { name: "Trend line" }).click();
+    await tap(0.3, 0.6);
+    await tap(0.5, 0.4);
+    await userEvent.keyboard("{Escape}");
 
     expect(saved()).toHaveLength(1);
-    expect(localStorage.getItem("cryptocharts.drawings.v1:ETH-USD")).toBeNull();
+    expect(JSON.parse(localStorage.getItem("cryptocharts.drawings.v1:ETH-USD") ?? "[]")).toHaveLength(1);
   });
 
   it("places a long position in one tap, opening at two to one", async () => {
@@ -233,7 +242,7 @@ describe("the chart's menus", () => {
   it("shut when a scroll moves the trigger", async () => {
     const screen = await render(
       <div style={{ height: 3000 }}>
-        <ChartWorkspace initialPair="BTC-USD" initialExchange="kraken" />
+        <ChartWorkspace pair="BTC-USD" onPickPair={picked} />
       </div>,
     );
     await screen.getByRole("button", { name: "Chart style" }).click();
@@ -261,7 +270,8 @@ describe("the chart's exchange menu", () => {
     await expect
       .element(screen.getByRole("button", { name: /^Exchange: Kraken/ }))
       .toBeVisible();
-    expect(new URL(window.location.href).searchParams.get("ex")).toBe("kraken");
+    // Kraken is the default, so the address doesn't name it.
+    expect(new URL(window.location.href).searchParams.get("ex")).toBeNull();
   });
 });
 

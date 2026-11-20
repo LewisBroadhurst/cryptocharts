@@ -23,7 +23,7 @@ async function fakeKraken(page: Page) {
 
 async function openBacktest(page: Page) {
   await fakeKraken(page);
-  await page.goto("/?pair=BTC-USD&ex=kraken");
+  await page.goto("/");
   await expect(page.getByText("Loading BTC-USD from Kraken")).toHaveCount(0, { timeout: 30_000 });
   await page.getByRole("button", { name: "Backtest", exact: true }).click();
   return page.getByRole("complementary", { name: "Backtest" });
