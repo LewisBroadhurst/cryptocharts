@@ -27,7 +27,10 @@ export type StrategyResult = {
   openTrade: { entryTime: number; entryPrice: number; returnPct: number } | null;
   equity: { time: number; value: number }[];
   returnPct: number;
+  /** Holding the coin from the open of `holdFrom`, the first bar the
+      strategy could trade on, to the last close. */
   buyHoldPct: number;
+  holdFrom: number;
   winRatePct: number | null;
   maxDrawdownPct: number;
   fees: number;
@@ -38,14 +41,19 @@ export type StrategyResult = {
  * page can show a strategy's results without Python: each order fills at the
  * next bar's open, less slippage, and pays the fee on what it trades. A test
  * holds the two to the same answers.
+ *
+ * Buy and hold starts at bar `warmUp`, the first the strategy could fill an
+ * order on, so the comparison covers the same days. The Python engine starts
+ * it at the first bar, as it can't know a script's warm-up.
  */
 export function simulate(
   bars: readonly Candle[],
   decide: (i: number, position: 0 | 1) => Order,
   feePct: number = DEFAULT_COSTS.fee,
   slippagePct: number = DEFAULT_COSTS.slippage,
+  warmUp = 0,
 ): StrategyResult | null {
-  if (bars.length < 2) return null;
+  if (bars.length < 2 || warmUp >= bars.length) return null;
   const fee = feePct / 100;
   const slip = slippagePct / 100;
   let cash = START_CASH;
@@ -105,7 +113,8 @@ export function simulate(
     openTrade: open && { ...open, returnPct: (last / open.entryPrice - 1) * 100 },
     equity,
     returnPct: (end / START_CASH - 1) * 100,
-    buyHoldPct: (last / bars[0].open - 1) * 100,
+    buyHoldPct: (last / bars[warmUp].open - 1) * 100,
+    holdFrom: bars[warmUp].time,
     winRatePct: trades.length > 0 ? (wins / trades.length) * 100 : null,
     maxDrawdownPct: worst * 100,
     fees,
@@ -120,6 +129,10 @@ function smaAt(closes: readonly number[], i: number, length: number): number | n
   for (let j = i + 1 - length; j <= i; j++) sum += closes[j];
   return sum / length;
 }
+
+/** The golden cross decides first on bar 199, with 200 closes, and fills on
+    bar 200. */
+export const GOLDEN_CROSS_WARM_UP = 200;
 
 /** GOLDEN_CROSS_STRATEGY, in TypeScript. */
 export function goldenCrossBacktest(
@@ -140,5 +153,6 @@ export function goldenCrossBacktest(
     },
     feePct,
     slippagePct,
+    GOLDEN_CROSS_WARM_UP,
   );
 }

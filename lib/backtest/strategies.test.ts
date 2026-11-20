@@ -67,7 +67,10 @@ describe("the golden-cross backtest", () => {
     expect(Boolean(ts.openTrade)).toBe(Boolean(py.openTrade));
     expect(ts.openTrade?.entryTime).toBe(py.openTrade?.entryTime);
     expect(ts.returnPct).toBeCloseTo(py.stats.returnPct, 6);
-    expect(ts.buyHoldPct).toBeCloseTo(py.stats.buyHoldPct, 6);
+    // Python holds from the first bar; the page holds from the first bar the
+    // strategy could trade on.
+    expect(ts.holdFrom).toBe(bars[200].time);
+    expect(ts.buyHoldPct).toBeCloseTo((bars.at(-1)!.close / bars[200].open - 1) * 100, 6);
     expect(ts.maxDrawdownPct).toBeCloseTo(py.stats.maxDrawdownPct, 6);
     expect(ts.fees).toBeCloseTo(py.stats.fees, 6);
     expect(ts.winRatePct ?? -1).toBeCloseTo(py.stats.winRatePct ?? -1, 6);
@@ -75,10 +78,10 @@ describe("the golden-cross backtest", () => {
     expect(ts.equity.at(-1)!.value).toBeCloseTo(py.equity.at(-1).value, 4);
   });
 
-  it("makes no trade before there are 200 bars", () => {
-    const result = goldenCrossBacktest(swings(199))!;
+  it("makes no trade before there are 200 bars, and has nothing to compare", () => {
+    expect(goldenCrossBacktest(swings(200))).toBeNull();
+    const result = goldenCrossBacktest(swings(201))!;
     expect(result.trades).toEqual([]);
-    expect(result.openTrade).toBeNull();
-    expect(result.returnPct).toBe(0);
+    expect(result.holdFrom).toBe(swings(201)[200].time);
   });
 });

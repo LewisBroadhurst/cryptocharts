@@ -14,7 +14,7 @@ import {
   type StrategyResult,
 } from "@/lib/backtest/strategies";
 import type { Candle } from "@/lib/data/chart-data";
-import { chartDay } from "@/lib/dates";
+import { chartDay, chartDayMonth } from "@/lib/dates";
 import { signedPct } from "@/lib/format";
 import { fetchDailyBars } from "@/lib/market/daily";
 import type { Pair } from "@/lib/market/pairs";
@@ -28,10 +28,13 @@ const money = (value: number) =>
 const W = 640;
 const H = 180;
 
-/** The strategy's equity against holding the coin from the first bar. */
-function EquityCurve({ bars, result }: { bars: Candle[]; result: StrategyResult }) {
+/** The strategy's equity against holding the coin, both from the first day
+    the strategy could trade: before that it can only sit in cash. */
+function EquityCurve({ bars: all, result }: { bars: Candle[]; result: StrategyResult }) {
+  const from = all.findIndex((bar) => bar.time === result.holdFrom);
+  const bars = all.slice(from);
   const hold = bars.map((bar) => (START_CASH * bar.close) / bars[0].open);
-  const mine = result.equity.map((point) => point.value);
+  const mine = result.equity.slice(from).map((point) => point.value);
   const top = Math.max(...hold, ...mine);
   const bottom = Math.min(...hold, ...mine);
   const y = (value: number) => H - ((value - bottom) / (top - bottom || 1)) * (H - 8) - 4;
@@ -66,7 +69,7 @@ function EquityCurve({ bars, result }: { bars: Candle[]; result: StrategyResult 
 
 function Results({ pair, bars, now }: { pair: Pair; bars: Candle[]; now: number }) {
   const result = goldenCrossBacktest(bars);
-  if (!result || bars.length < 200) return <Unavailable />;
+  if (!result) return <Unavailable />;
   const end = START_CASH * (1 + result.returnPct / 100);
   const position = result.openTrade
     ? `Long since ${chartDay(result.openTrade.entryTime)}`
@@ -77,27 +80,28 @@ function Results({ pair, bars, now }: { pair: Pair; bars: Candle[]; now: number 
       <Figures
         figures={[
           ["Return", signedPct(result.returnPct)],
-          ["Buy and hold", signedPct(result.buyHoldPct)],
+          [`Buy and hold from ${chartDayMonth(result.holdFrom)}`, signedPct(result.buyHoldPct)],
           ["Max drawdown", signedPct(result.maxDrawdownPct)],
           ["Win rate", result.winRatePct === null ? "—" : `${result.winRatePct.toFixed(0)}%`],
           ["Position now", position],
         ]}
       />
       <Prose>
-        From {chartDay(bars[0].time)} to today, holding {pair.name} while its 50-day SMA was
+        The strategy needs 200 days of data before it can trade, so both are measured from{" "}
+        {chartDay(result.holdFrom)}. Since then, holding {pair.name} while its 50-day SMA was
         above its 200-day SMA turned {money(START_CASH)} into {money(end)} (
         {signedPct(result.returnPct)}), against {signedPct(result.buyHoldPct)} for buy and
         hold. It made {result.trades.length} closed{" "}
         {result.trades.length === 1 ? "trade" : "trades"}
         {result.openTrade ? " and has one open" : ""}, with a max drawdown of{" "}
-        {signedPct(result.maxDrawdownPct)}. The first signal can only come once there are 200
-        days of data, on {chartDay(bars[199].time)}.
+        {signedPct(result.maxDrawdownPct)}.
       </Prose>
       <EquityCurve bars={bars} result={result} />
       <Stamp at={now} />
       <Prose>
         Orders fill at the next day&apos;s open, with a{" "}
-        {DEFAULT_COSTS.fee}% fee and {DEFAULT_COSTS.slippage}% slippage each way.
+        {DEFAULT_COSTS.fee}% fee and {DEFAULT_COSTS.slippage}% slippage each way. The backtester
+        measures buy and hold from the first bar it&apos;s given.
       </Prose>
       {(result.trades.length > 0 || result.openTrade) && (
         <div className="flex flex-col gap-2">
