@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CoinTopicLinks } from "@/components/site/topic-parts";
 import { cn } from "@big-shared/ui/cn";
 import { PAIRS, type Pair } from "@/lib/market/pairs";
 import { coinAmount, fetchSnapshot, usd, type Snapshot } from "@/lib/market/snapshot";
@@ -78,6 +79,7 @@ export default async function CoinDetails({ pair }: { pair: Pair }) {
         <p className="max-w-prose text-sm text-subtle-foreground">{pair.about}</p>
       </div>
       {snapshot && <Figures pair={pair} snapshot={snapshot} />}
+      <CoinTopicLinks pair={pair} />
       <nav aria-labelledby="more-charts" className="flex flex-col gap-2">
         <h2 id="more-charts" className="text-sm font-semibold text-foreground">
           More live charts

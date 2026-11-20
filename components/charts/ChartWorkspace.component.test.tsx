@@ -4,6 +4,8 @@ import { render } from "vitest-browser-react";
 
 import "@/app/globals.css";
 import ChartWorkspace from "@/components/charts/ChartWorkspace";
+import { GOLDEN_CROSS_STRATEGY } from "@/lib/backtest/strategies";
+import { OPEN_BACKTEST_EVENT, type ChartPreset } from "@/lib/site/pages";
 
 const HOUR = 3_600;
 const START = Date.parse("2026-01-05T00:00:00Z") / 1000;
@@ -57,10 +59,10 @@ async function tap(fx: number, fy: number, shiftKey = false) {
   target.dispatchEvent(new PointerEvent("pointerup", init));
 }
 
-async function mount() {
+async function mount(preset?: ChartPreset) {
   await page.viewport(1200, 800);
   const screen = await render(
-    <ChartWorkspace pair="BTC-USD" onPickPair={picked} />,
+    <ChartWorkspace pair="BTC-USD" preset={preset} onPickPair={picked} />,
   );
   await vi.waitFor(() =>
     expect(document.querySelectorAll("canvas").length).toBeGreaterThan(2),
@@ -372,5 +374,39 @@ describe("the chart's full screen", () => {
     await expect
       .element(screen.getByRole("button", { name: "Full screen" }))
       .toBeVisible();
+  });
+});
+
+describe("a page's preset", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("opens the chart with the page's indicators and saves nothing the reader changes", async () => {
+    const screen = await mount({
+      key: "rsi",
+      interval: "1D",
+      studies: [{ id: "rsi-14", kind: "rsi", length: 14, color: "#a78bfa", width: 2 }],
+    });
+    await expect.element(screen.getByText("RSI 14")).toBeVisible();
+    await expect.element(screen.getByText("EMA 50")).not.toBeInTheDocument();
+
+    await screen.getByRole("button", { name: "Remove RSI 14" }).click();
+    await expect.element(screen.getByText("RSI 14")).not.toBeInTheDocument();
+    expect(localStorage.getItem("cryptocharts.layout.v1")).toBeNull();
+  });
+
+  it("opens the backtester on the page's script without saving it over the reader's", async () => {
+    localStorage.setItem("cryptocharts.backtest.script.v1", JSON.stringify("def on_bar(bar, ctx):\n    pass\n"));
+    const screen = await mount({
+      key: "backtest/golden-cross",
+      interval: "1D",
+      studies: [],
+      script: GOLDEN_CROSS_STRATEGY,
+    });
+    window.dispatchEvent(new Event(OPEN_BACKTEST_EVENT));
+    const script = screen.getByLabelText("Python strategy");
+    await expect.element(script).toHaveValue(GOLDEN_CROSS_STRATEGY);
+    expect(JSON.parse(localStorage.getItem("cryptocharts.backtest.script.v1")!)).toMatch(/pass/);
   });
 });

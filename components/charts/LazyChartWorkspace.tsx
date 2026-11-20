@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import { workspaceSearch } from "@/components/charts/workspaceAddress";
 import { WORKSPACE_FRAME } from "@/components/charts/workspaceStyles";
 import type { Pair } from "@/lib/market/pairs";
-import { pairPath } from "@/lib/site/seo";
+import {
+  chartPagePath,
+  chartPreset,
+  samePageFor,
+  type ChartPage,
+} from "@/lib/site/pages";
 
 function WorkspaceLoading() {
   return (
@@ -25,16 +30,20 @@ const ChartWorkspace = dynamic(
 );
 
 /** The chart, drawn in the browser only. Picking another coin goes to that
-    coin's page, so the address, heading and text below always match it. */
-export default function LazyChartWorkspace({ pair }: { pair: string }) {
+    coin's page, or to its version of this indicator or backtest page where it
+    has one, so the address, heading and text below always match it. */
+export default function LazyChartWorkspace({ page }: { page: ChartPage }) {
   const router = useRouter();
   return (
     <ChartWorkspace
-      pair={pair}
+      pair={page.pair.id}
+      preset={chartPreset(page)}
       // The chart is where the reader is: stay there rather than scroll to the
       // new page's text.
       onPickPair={(next: Pair) =>
-        router.push(`${pairPath(next)}${workspaceSearch()}`, { scroll: false })
+        router.push(`${chartPagePath(samePageFor(page, next))}${workspaceSearch()}`, {
+          scroll: false,
+        })
       }
     />
   );

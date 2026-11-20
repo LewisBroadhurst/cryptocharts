@@ -55,6 +55,7 @@ import {
 } from "@/lib/charts/studies";
 import type { LinePoint } from "@/lib/data/chart-data";
 import { pairById, pairFor, type Pair } from "@/lib/market/pairs";
+import { OPEN_BACKTEST_EVENT, type ChartPreset } from "@/lib/site/pages";
 import { SOURCES, type Exchange } from "@/lib/market/sources";
 import { cn } from "@big-shared/ui/cn";
 import HoverTip from "@big-shared/ui/hover-tip";
@@ -123,12 +124,22 @@ const isTyping = (target: EventTarget | null) =>
   (target.isContentEditable ||
     target.closest("input, textarea, select, dialog") !== null);
 
+/** The chart a page opens with: the reader's saved layout, or the page's own
+    interval and indicators over it. */
+const openingLayout = (preset: ChartPreset | undefined): ChartLayout => {
+  const saved = loadLayout();
+  return preset ? { ...saved, interval: preset.interval, studies: preset.studies } : saved;
+};
+
 export default function ChartWorkspace({
   pair: shownPair,
+  preset,
   onPickPair,
 }: {
   /** The coin whose page this is. */
   pair: string;
+  /** What a page about one indicator or strategy opens the chart with. */
+  preset?: ChartPreset;
   /** Another coin was picked: its page will show it. */
   onPickPair: (pair: Pair) => void;
 }) {
@@ -156,7 +167,11 @@ export default function ChartWorkspace({
       : frame.current?.requestFullscreen();
     done?.catch(() => {});
   };
-  const [layout, setLayout] = useState<ChartLayout>(loadLayout);
+  const [layout, setLayout] = useState<ChartLayout>(() => openingLayout(preset));
+  // A page with a preset shows it without saving it, and so does anything the
+  // reader changes there: their own layout is what the other pages open with.
+  const presetKey = preset?.key ?? "";
+  const [layoutFor, setLayoutFor] = useState(presetKey);
   const history = useDrawingHistory(() => loadDrawings(symbol));
   const { drawings, commit, reset } = history;
   const [selected, setSelected] = useState<string | null>(null);
@@ -238,13 +253,17 @@ export default function ChartWorkspace({
     [precision],
   );
 
-  const update = useCallback((next: Partial<ChartLayout>) => {
-    setLayout((now) => {
-      const merged = { ...now, ...next };
-      saveLayout(merged);
-      return merged;
-    });
-  }, []);
+  const saving = presetKey === "";
+  const update = useCallback(
+    (next: Partial<ChartLayout>) => {
+      setLayout((now) => {
+        const merged = { ...now, ...next };
+        if (saving) saveLayout(merged);
+        return merged;
+      });
+    },
+    [saving],
+  );
 
   const setTool = useCallback((next: DrawingKind | null) => {
     setToolNow(next);
@@ -259,6 +278,23 @@ export default function ChartWorkspace({
     track("coin_picked", { from: symbol, to: next.id });
     onPickPair(next);
   };
+
+  // The page moved to one with another preset, or none: its own layout, and the
+  // backtester closes, since its script may be another.
+  if (layoutFor !== presetKey) {
+    setLayoutFor(presetKey);
+    setLayout(openingLayout(preset));
+    setBacktestOpen(false);
+  }
+
+  useEffect(() => {
+    const open = () => {
+      setBacktestOpen(true);
+      frame.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    window.addEventListener(OPEN_BACKTEST_EVENT, open);
+    return () => window.removeEventListener(OPEN_BACKTEST_EVENT, open);
+  }, []);
 
   // The page moved to another coin: its own drawings, nothing picked.
   const [drawnFor, setDrawnFor] = useState(symbol);
@@ -1182,6 +1218,8 @@ export default function ChartWorkspace({
         </div>
         {backtestOpen && (
           <BacktestPanel
+            key={presetKey}
+            script={preset?.script}
             bars={allCandles}
             label={`${pair.id} · ${intervalLabel} · ${source.label}`}
             upTo={replay ? (candles.at(-1)?.time ?? null) : null}
