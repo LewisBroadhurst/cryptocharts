@@ -51,11 +51,13 @@ export function withoutQuery(value: unknown): unknown {
 
 const ADDRESSES = ["$current_url", "$referrer", "$initial_referrer"];
 
-/** Every address an event carries, cut to its page. */
+/** Every address an event carries, cut to its page, and the search the reader
+    came from, which PostHog reads out of a referrer's query, dropped. */
 export const pagesOnly: BeforeSendFn = (event) => {
   if (!event) return event;
   const properties = { ...event.properties };
   for (const key of ADDRESSES) if (key in properties) properties[key] = withoutQuery(properties[key]);
+  delete properties.ph_keyword;
   return { ...event, properties };
 };
 

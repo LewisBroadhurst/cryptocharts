@@ -94,12 +94,15 @@ describe("addresses", () => {
         $current_url: "https://cryptocharts.stratdeck.uk/?gclid=1",
         $referrer: "https://www.google.com/search?q=my+name",
         $initial_referrer: "$direct",
+        $search_engine: "google",
+        ph_keyword: "my name",
       },
     };
     expect(pagesOnly(event as never)?.properties).toEqual({
       $current_url: "https://cryptocharts.stratdeck.uk/",
       $referrer: "https://www.google.com/search",
       $initial_referrer: "$direct",
+      $search_engine: "google",
     });
   });
 });
