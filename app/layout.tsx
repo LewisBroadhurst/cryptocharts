@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "@/app/globals.css";
-import Analytics from "@/components/site/Analytics";
+import UsageEvents from "@/components/site/UsageEvents";
 import { SITE_NAME, SITE_URL } from "@/lib/site/seo";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -26,6 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-dvh antialiased">
         {children}
         <Analytics />
+        <UsageEvents />
       </body>
     </html>
   );
