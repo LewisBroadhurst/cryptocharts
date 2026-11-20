@@ -56,8 +56,8 @@ import {
 import type { LinePoint } from "@/lib/data/chart-data";
 import { pairById, pairFor, type Pair } from "@/lib/market/pairs";
 import { SOURCES, type Exchange } from "@/lib/market/sources";
-import { cn } from "@/lib/utils";
-import HoverTip from "@/components/base/HoverTip";
+import { cn } from "@big-shared/ui/cn";
+import HoverTip from "@big-shared/ui/hover-tip";
 import BacktestPanel from "@/components/charts/BacktestPanel";
 import PairPicker from "@/components/charts/PairPicker";
 import ReplayBar from "@/components/charts/ReplayBar";

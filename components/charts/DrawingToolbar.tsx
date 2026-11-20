@@ -12,8 +12,8 @@ import {
   type Drawing,
   type LineStyle,
 } from "@/lib/charts/drawings";
-import { cn } from "@/lib/utils";
-import HoverTip from "@/components/base/HoverTip";
+import { cn } from "@big-shared/ui/cn";
+import HoverTip from "@big-shared/ui/hover-tip";
 import ChartPopover, {
   ColourPicker,
   PopoverOption,

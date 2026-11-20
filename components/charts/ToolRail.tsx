@@ -4,8 +4,8 @@ import { useState, type ReactNode } from "react";
 import { ChevronRightIcon } from "@heroicons/react/20/solid";
 
 import { TOOL_NAMES, type DrawingKind } from "@/lib/charts/drawings";
-import { cn } from "@/lib/utils";
-import HoverTip from "@/components/base/HoverTip";
+import { cn } from "@big-shared/ui/cn";
+import HoverTip from "@big-shared/ui/hover-tip";
 import ChartPopover, { PopoverOption } from "@/components/charts/ChartPopover";
 import {
   CursorIcon,
