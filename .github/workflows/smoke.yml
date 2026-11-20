@@ -1,0 +1,47 @@
+name: Live site check
+
+# Runs the e2e specs against the deployed site and the real Kraken feed. A
+# failed scheduled run emails the repo owner (GitHub's default notification for
+# scheduled workflows), and that email is the alert.
+on:
+  schedule:
+    - cron: "17 7 * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Site to check
+        required: false
+        default: https://cryptocharts.stratdeck.uk
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-site-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Live site works against Kraken
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright test
+        env:
+          BASE_URL: ${{ inputs.base_url || 'https://cryptocharts.stratdeck.uk' }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: live-check-report
+          path: test-results/
+          retention-days: 14
