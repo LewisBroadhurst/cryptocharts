@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import PairPage from "@/components/site/PairPage";
+import CoinDetails from "@/components/site/CoinDetails";
 import { DEFAULT_PAIR, pairById } from "@/lib/market/pairs";
 import { pairMetadata } from "@/lib/site/seo";
 
@@ -13,5 +13,5 @@ export const metadata: Metadata = pairMetadata(BITCOIN);
 
 /** The home page is Bitcoin's chart. */
 export default function Home() {
-  return <PairPage pair={BITCOIN} />;
+  return <CoinDetails pair={BITCOIN} />;
 }

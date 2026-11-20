@@ -73,6 +73,13 @@ describe("signInHref", () => {
     );
     expect(signInHref("")).toBe("https://www.stratdeck.uk/sign-in?callbackUrl=%2Fcryptocharts");
   });
+
+  it("comes back to the coin whose page the reader signed in from", () => {
+    expect(signInHref("", "SOL-USD")).toBe(
+      "https://www.stratdeck.uk/sign-in?callbackUrl=%2Fcryptocharts%3Fpair%3DSOL-USD",
+    );
+    expect(signInHref("?ex=coinbase", "SOL-USD")).toContain("pair%3DSOL-USD%26ex%3Dcoinbase");
+  });
 });
 
 describe("mergeWorkspaces", () => {

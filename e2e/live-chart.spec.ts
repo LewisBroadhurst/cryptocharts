@@ -45,15 +45,20 @@ test("an old link to a coin goes to its page for good, and the address tidies", 
   await expect(page).toHaveURL(/\/ethereum$/);
 });
 
-test("picking another coin goes to its page", async ({ page }) => {
+test("picking another coin goes to its page, keeping the chart as it was", async ({ page }) => {
   await page.goto("/");
   await expectChart(page, "BTC-USD");
+  await page.getByRole("button", { name: "Backtest", exact: true }).click();
+  const panel = page.getByRole("complementary", { name: "Backtest" });
+  await expect(panel).toBeVisible();
   await page.getByRole("button", { name: /^Pair: BTC-USD/ }).click();
   await page.getByRole("textbox", { name: "Search coins" }).fill("sol");
   await page.getByRole("button", { name: /SOL/ }).click();
   await expect(page).toHaveURL(/\/solana$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Solana (SOL) live chart");
   await expectChart(page, "SOL-USD");
+  // The chart moved coin in place rather than starting again.
+  await expect(panel).toBeVisible();
 
   await page.goBack();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Bitcoin (BTC) live chart");

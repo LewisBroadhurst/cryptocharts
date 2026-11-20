@@ -58,9 +58,7 @@ export function readKrakenTicker(body: unknown, at: number): Snapshot | null {
   };
 }
 
-/** The coin's figures from Kraken, or null if Kraken can't be reached in time:
-    the page then goes without them rather than failing. */
-export async function fetchSnapshot(pair: Pair): Promise<Snapshot | null> {
+async function askKraken(pair: Pair): Promise<Snapshot | null> {
   try {
     const response = await fetch(
       `https://api.kraken.com/0/public/Ticker?pair=${pair.kraken.rest}`,
@@ -71,6 +69,16 @@ export async function fetchSnapshot(pair: Pair): Promise<Snapshot | null> {
   } catch {
     return null;
   }
+}
+
+/** The coin's figures from Kraken, or null if Kraken can't be reached in time:
+    the page then goes without them rather than failing. A build asks for every
+    coin at once, so one refusal (a rate limit, say) gets one more try. */
+export async function fetchSnapshot(pair: Pair, retryAfterMs = 1_000): Promise<Snapshot | null> {
+  const first = await askKraken(pair);
+  if (first) return first;
+  await new Promise((resolve) => setTimeout(resolve, retryAfterMs));
+  return askKraken(pair);
 }
 
 const USD = new Map<number, Intl.NumberFormat>();

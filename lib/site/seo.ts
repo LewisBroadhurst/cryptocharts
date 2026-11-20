@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { DEFAULT_PAIR, type Pair } from "@/lib/market/pairs";
+import { DEFAULT_PAIR, pairById, pairBySlug, type Pair } from "@/lib/market/pairs";
 
 export const SITE_URL = "https://cryptocharts.stratdeck.uk";
 export const SITE_NAME = "Crypto Charts";
@@ -16,6 +16,13 @@ export const coinLabel = (pair: Pair): string =>
     every other coin has its own, `/ethereum`. */
 export const pairPath = (pair: Pair): string =>
   pair.id === DEFAULT_PAIR ? "/" : `/${pair.slug}`;
+
+/** The pair whose page is at `pathname`, or undefined for any other page. */
+export function pairForPath(pathname: string): Pair | undefined {
+  if (pathname === "/") return pairById(DEFAULT_PAIR);
+  const pair = pairBySlug(pathname.slice(1));
+  return pair && pair.id !== DEFAULT_PAIR ? pair : undefined;
+}
 
 /** The one address search engines should keep for a pair's chart. */
 export const pairUrl = (pair: Pair): string => `${SITE_URL}${pairPath(pair)}`;
@@ -77,7 +84,12 @@ export function pairStructuredData(pair: Pair) {
         inLanguage: "en-GB",
         isPartOf: { "@type": "WebSite", "@id": home, url: home, name: SITE_NAME },
         about: { "@type": "Thing", name: pair.name, alternateName: pair.base },
-        primaryImageOfPage: `${SITE_URL}${shareImagePath(pair)}`,
+        primaryImageOfPage: {
+          "@type": "ImageObject",
+          url: `${SITE_URL}${shareImagePath(pair)}`,
+          width: SHARE_IMAGE_SIZE.width,
+          height: SHARE_IMAGE_SIZE.height,
+        },
       },
       {
         "@type": "BreadcrumbList",

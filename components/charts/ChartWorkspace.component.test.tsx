@@ -60,7 +60,7 @@ async function tap(fx: number, fy: number, shiftKey = false) {
 async function mount() {
   await page.viewport(1200, 800);
   const screen = await render(
-    <ChartWorkspace initialPair="BTC-USD" onPickPair={picked} />,
+    <ChartWorkspace pair="BTC-USD" onPickPair={picked} />,
   );
   await vi.waitFor(() =>
     expect(document.querySelectorAll("canvas").length).toBeGreaterThan(2),
@@ -127,7 +127,7 @@ describe("ChartWorkspace", () => {
     ]);
   });
 
-  it("hands another coin to the page, and keeps drawings under the pair they were drawn on", async () => {
+  it("hands a picked coin to the page, then shows it with its own drawings", async () => {
     picked.mockClear();
     const screen = await mount();
     await screen.getByRole("button", { name: "Trend line" }).click();
@@ -141,8 +141,16 @@ describe("ChartWorkspace", () => {
     expect(picked).toHaveBeenCalledOnce();
     expect(picked.mock.calls[0][0].id).toBe("ETH-USD");
 
+    // The page moves to Ethereum; the same chart, still mounted, follows.
+    await screen.rerender(<ChartWorkspace pair="ETH-USD" onPickPair={picked} />);
+    await expect.element(screen.getByRole("button", { name: /^Pair: ETH-USD/ })).toBeVisible();
+    await screen.getByRole("button", { name: "Trend line" }).click();
+    await tap(0.3, 0.6);
+    await tap(0.5, 0.4);
+    await userEvent.keyboard("{Escape}");
+
     expect(saved()).toHaveLength(1);
-    expect(localStorage.getItem("cryptocharts.drawings.v1:ETH-USD")).toBeNull();
+    expect(JSON.parse(localStorage.getItem("cryptocharts.drawings.v1:ETH-USD") ?? "[]")).toHaveLength(1);
   });
 
   it("places a long position in one tap, opening at two to one", async () => {
@@ -234,7 +242,7 @@ describe("the chart's menus", () => {
   it("shut when a scroll moves the trigger", async () => {
     const screen = await render(
       <div style={{ height: 3000 }}>
-        <ChartWorkspace initialPair="BTC-USD" onPickPair={picked} />
+        <ChartWorkspace pair="BTC-USD" onPickPair={picked} />
       </div>,
     );
     await screen.getByRole("button", { name: "Chart style" }).click();

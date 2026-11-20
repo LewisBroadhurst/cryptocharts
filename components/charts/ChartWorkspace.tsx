@@ -123,14 +123,15 @@ const isTyping = (target: EventTarget | null) =>
     target.closest("input, textarea, select, dialog") !== null);
 
 export default function ChartWorkspace({
-  initialPair,
+  pair: shownPair,
   onPickPair,
 }: {
-  initialPair: string;
-  /** Another coin was picked: its page shows it. */
+  /** The coin whose page this is. */
+  pair: string;
+  /** Another coin was picked: its page will show it. */
   onPickPair: (pair: Pair) => void;
 }) {
-  const symbol = pairFor(initialPair).id;
+  const symbol = pairFor(shownPair).id;
   const [exchange, setExchange] = useState<Exchange>(exchangeInAddress);
   const pair = pairById(symbol) ?? pairFor(undefined);
   const source = SOURCES[exchange];
@@ -156,7 +157,7 @@ export default function ChartWorkspace({
   };
   const [layout, setLayout] = useState<ChartLayout>(loadLayout);
   const history = useDrawingHistory(() => loadDrawings(symbol));
-  const { drawings, commit } = history;
+  const { drawings, commit, reset } = history;
   const [selected, setSelected] = useState<string | null>(null);
   const [tool, setToolNow] = useState<DrawingKind | null>(null);
   const [drawingsHidden, setDrawingsHidden] = useState(false);
@@ -255,6 +256,15 @@ export default function ChartWorkspace({
   const pickPair = (next: Pair) => {
     if (next.id !== symbol) onPickPair(next);
   };
+
+  // The page moved to another coin: its own drawings, nothing picked.
+  const [drawnFor, setDrawnFor] = useState(symbol);
+  if (drawnFor !== symbol) {
+    setDrawnFor(symbol);
+    reset(loadDrawings(symbol));
+    setSelected(null);
+    setToolNow(null);
+  }
 
   // The page names the coin; the address keeps only an exchange that isn't
   // the default, so it can be shared as it is.

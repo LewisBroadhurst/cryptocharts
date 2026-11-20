@@ -26,11 +26,11 @@ const ChartWorkspace = dynamic(
 
 /** The chart, drawn in the browser only. Picking another coin goes to that
     coin's page, so the address, heading and text below always match it. */
-export default function LazyChartWorkspace({ initialPair }: { initialPair: string }) {
+export default function LazyChartWorkspace({ pair }: { pair: string }) {
   const router = useRouter();
   return (
     <ChartWorkspace
-      initialPair={initialPair}
+      pair={pair}
       onPickPair={(next: Pair) => router.push(`${pairPath(next)}${workspaceSearch()}`)}
     />
   );

@@ -13,6 +13,7 @@ import {
   snapshot,
   STRATDECK,
 } from "@/lib/account/workspace-sync";
+import { pairForPath } from "@/lib/site/seo";
 
 /** How often this browser's changes are checked for and saved. */
 const SAVE_EVERY_MS = 4_000;
@@ -100,7 +101,10 @@ export default function AccountBadge() {
       <a
         href={signInHref("")}
         onClick={(event) => {
-          event.currentTarget.href = signInHref(window.location.search);
+          event.currentTarget.href = signInHref(
+            window.location.search,
+            pairForPath(window.location.pathname)?.id,
+          );
         }}
         className="text-sm text-subtle-foreground underline-offset-2 hover:text-foreground hover:underline"
       >

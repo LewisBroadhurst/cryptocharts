@@ -64,11 +64,23 @@ describe("fetchSnapshot", () => {
     );
   });
 
+  it("tries once more after a refusal, such as a rate limit", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ error: ["EGeneral:Too many requests"] }))
+      .mockResolvedValueOnce(Response.json(TICKER));
+    vi.stubGlobal("fetch", fetch);
+    expect((await fetchSnapshot(pairFor("BTC-USD"), 0))?.price).toBe(97010);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it("gives nothing, rather than failing the page, when Kraken can't be reached or says no", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("fetch failed"); }));
-    expect(await fetchSnapshot(pairFor("ETH-USD"))).toBeNull();
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("busy", { status: 503 })));
-    expect(await fetchSnapshot(pairFor("ETH-USD"))).toBeNull();
+    expect(await fetchSnapshot(pairFor("ETH-USD"), 0)).toBeNull();
+    const busy = vi.fn(async () => new Response("busy", { status: 503 }));
+    vi.stubGlobal("fetch", busy);
+    expect(await fetchSnapshot(pairFor("ETH-USD"), 0)).toBeNull();
+    expect(busy).toHaveBeenCalledTimes(2);
   });
 });
 
