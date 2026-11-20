@@ -13,6 +13,7 @@ import {
   snapshot,
   STRATDECK,
 } from "@/lib/account/workspace-sync";
+import { track } from "@/lib/analytics/analytics";
 import { pairForPath } from "@/lib/site/seo";
 
 /** How often this browser's changes are checked for and saved. */
@@ -101,6 +102,7 @@ export default function AccountBadge() {
       <a
         href={signInHref("")}
         onClick={(event) => {
+          track("sign_in_clicked");
           event.currentTarget.href = signInHref(
             window.location.search,
             pairForPath(window.location.pathname)?.id,

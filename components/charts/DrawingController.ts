@@ -34,7 +34,8 @@ const BRUSH_STEP_PX = 3;
 export type ControllerEvents = {
   commit: (drawings: Drawing[]) => void;
   select: (id: string | null) => void;
-  toolDone: () => void;
+  /** A drawing was finished, so the tool is done. */
+  toolDone: (drawing: Drawing) => void;
 };
 
 type Drag = {
@@ -249,7 +250,7 @@ export class DrawingController {
     this.resume();
     this.events.commit(drawings);
     this.events.select(drawing.id);
-    this.events.toolDone();
+    this.events.toolDone(drawing);
   }
 
   private readonly onDown = (event: PointerEvent) => {

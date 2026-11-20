@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "@/app/globals.css";
+import Analytics from "@/components/site/Analytics";
 import { SITE_NAME, SITE_URL } from "@/lib/site/seo";
 import { Analytics } from "@vercel/analytics/next";
 

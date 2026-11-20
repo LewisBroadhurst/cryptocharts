@@ -33,7 +33,19 @@ const config: NextConfig = {
   // The shared look and UI primitives ship as TypeScript source.
   transpilePackages: ["@big-shared/ui"],
   poweredByHeader: false,
-  redirects: async () => legacyRedirects(),
+  redirects: async () => [
+    ...legacyRedirects(),
+    // Next's own trailing-slash redirect is off for PostHog's sake (below), so
+    // every other page keeps one address: /ethereum/ goes to /ethereum.
+    { source: "/:path((?!ingest/).+)/", destination: "/:path", permanent: true },
+  ],
+  // Usage counts reach PostHog's EU cloud through our own address
+  // (lib/analytics), so the page's security policy names no other host.
+  rewrites: async () => [
+    { source: "/ingest/:path*", destination: "https://eu.i.posthog.com/:path*" },
+  ],
+  // PostHog's paths end in a slash, which Next would otherwise redirect away.
+  skipTrailingSlashRedirect: true,
   reactStrictMode: true,
   headers: async () => [
     {

@@ -25,6 +25,7 @@
     "@vercel/analytics": "^2.0.1",
     "lightweight-charts": "5.2.0",
     "next": "16.4.5",
+    "posthog-js": "1.445.1",
     "pyodide": "314.0.7",
     "react": "19.2.8",
     "react-dom": "19.2.8"
