@@ -92,6 +92,7 @@ import {
 } from "@/components/charts/ChartIcons";
 import { useDrawingHistory } from "@/components/charts/useDrawingHistory";
 import { exchangeInAddress, workspaceSearch } from "@/components/charts/workspaceAddress";
+import { backtestErrorKind, track } from "@/lib/analytics/analytics";
 import { WORKSPACE_FRAME } from "@/components/charts/workspaceStyles";
 import { useMarketBars } from "@/hooks/useMarketBars";
 
@@ -254,7 +255,9 @@ export default function ChartWorkspace({
   }, []);
 
   const pickPair = (next: Pair) => {
-    if (next.id !== symbol) onPickPair(next);
+    if (next.id === symbol) return;
+    track("coin_picked", { from: symbol, to: next.id });
+    onPickPair(next);
   };
 
   // The page moved to another coin: its own drawings, nothing picked.
@@ -351,7 +354,10 @@ export default function ChartWorkspace({
       {
         commit,
         select: setSelected,
-        toolDone: () => setToolNow(null),
+        toolDone: (drawing) => {
+          setToolNow(null);
+          track("drawing_added", { kind: drawing.kind });
+        },
       },
       { color: () => colorRef.current },
     );
@@ -493,6 +499,7 @@ export default function ChartWorkspace({
     const at = indexAtOrBefore(all, time);
     if (at < 0) return;
     setPicking(false);
+    track("replay_started");
     setReplay((now) => ({
       at: all[at].time,
       playing: false,
@@ -827,7 +834,12 @@ export default function ChartWorkspace({
     setAutoScale(true);
   };
 
-  const editStudies = (next: Study[]) => update({ studies: next });
+  const editStudies = (next: Study[]) => {
+    for (const study of next)
+      if (!studies.some((one) => one.id === study.id))
+        track("indicator_added", { kind: study.kind });
+    update({ studies: next });
+  };
 
   const rail = {
     tool,
@@ -912,6 +924,7 @@ export default function ChartWorkspace({
                     type="button"
                     aria-disabled="true"
                     aria-label={`${one.label}: coming soon`}
+                    onClick={() => track("coinbase_requested")}
                     className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground"
                   >
                     {one.label}
@@ -933,7 +946,11 @@ export default function ChartWorkspace({
               key={one.id}
               type="button"
               aria-pressed={interval === one.id}
-              onClick={() => update({ interval: one.id as Interval })}
+              onClick={() => {
+                if (one.id !== interval)
+                  track("interval_changed", { interval: one.id });
+                update({ interval: one.id as Interval });
+              }}
               className={cn(
                 BAR_BUTTON,
                 "tabular-nums",
@@ -1169,9 +1186,16 @@ export default function ChartWorkspace({
             label={`${pair.id} · ${intervalLabel} · ${source.label}`}
             upTo={replay ? (candles.at(-1)?.time ?? null) : null}
             result={backtest?.key === viewKey ? backtest.result : null}
-            onResult={(result) =>
-              setBacktest(result ? { key: viewKey, result } : null)
-            }
+            onResult={(result) => {
+              if (result)
+                track(
+                  "backtest_run",
+                  result.ok
+                    ? { ok: true, trades: result.trades.length }
+                    : { ok: false, error: backtestErrorKind(result) },
+                );
+              setBacktest(result ? { key: viewKey, result } : null);
+            }}
             onClose={() => setBacktestOpen(false)}
           />
         )}
