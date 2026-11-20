@@ -82,18 +82,58 @@ export async function fetchAccount(): Promise<Account | null> {
   }
 }
 
-export async function saveWorkspace(data: Record<string, string>): Promise<boolean> {
+export type SaveResult =
+  | { kind: "saved"; updatedAt: string }
+  | { kind: "conflict"; data: Record<string, string>; updatedAt: string | null }
+  | { kind: "failed" };
+
+/**
+ * Saves over the save this browser last saw (`base`, null for none). If another
+ * device saved since, StratDeck sends back its newer workspace instead.
+ */
+export async function saveWorkspace(
+  data: Record<string, string>,
+  base: string | null,
+): Promise<SaveResult> {
   try {
     const res = await fetch(WORKSPACE_API, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data }),
+      body: JSON.stringify({ data, baseUpdatedAt: base }),
     });
-    return res.ok;
+    const body = (await res.json()) as { updatedAt?: unknown };
+    if (res.ok && typeof body.updatedAt === "string")
+      return { kind: "saved", updatedAt: body.updatedAt };
+    if (res.status === 409) {
+      const newer = readAccount({ ...body, signedIn: true });
+      return {
+        kind: "conflict",
+        data: newer?.signedIn ? (newer.data ?? {}) : {},
+        updatedAt: newer?.signedIn ? newer.updatedAt : null,
+      };
+    }
+    return { kind: "failed" };
   } catch {
-    return false;
+    return { kind: "failed" };
   }
+}
+
+/**
+ * Another device saved first. Its workspace stands, with this browser's own
+ * changes since its last save laid over it: a setting changed here wins, one
+ * removed here goes, and everything else is the other device's.
+ */
+export function mergeWorkspaces(
+  newer: Record<string, string>,
+  lastSaved: Record<string, string>,
+  here: Record<string, string>,
+): Record<string, string> {
+  const merged = { ...newer };
+  for (const [key, value] of Object.entries(here))
+    if (lastSaved[key] !== value) merged[key] = value;
+  for (const key of Object.keys(lastSaved)) if (!(key in here)) delete merged[key];
+  return merged;
 }
 
 /** StratDeck's sign-in, coming back to this chart afterwards. */

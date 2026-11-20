@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   applySaved,
+  mergeWorkspaces,
   onSignIn,
   readAccount,
   signInHref,
@@ -71,5 +72,28 @@ describe("signInHref", () => {
       "https://www.stratdeck.uk/sign-in?callbackUrl=%2Fcryptocharts%3Fpair%3DETH-USD%26ex%3Dkraken",
     );
     expect(signInHref("")).toBe("https://www.stratdeck.uk/sign-in?callbackUrl=%2Fcryptocharts");
+  });
+});
+
+describe("mergeWorkspaces", () => {
+  it("keeps the other device's work and lays this browser's own changes over it", () => {
+    const lastSaved = { "cryptocharts.layout.v1": "a", "cryptocharts.drawings.v1:BTC-USD": "[1]" };
+    const newer = {
+      "cryptocharts.layout.v1": "a",
+      "cryptocharts.drawings.v1:BTC-USD": "[1,2]",
+      "cryptocharts.drawings.v1:ETH-USD": "[9]",
+    };
+    const here = { "cryptocharts.layout.v1": "b", "cryptocharts.drawings.v1:BTC-USD": "[1]" };
+    expect(mergeWorkspaces(newer, lastSaved, here)).toEqual({
+      "cryptocharts.layout.v1": "b",
+      "cryptocharts.drawings.v1:BTC-USD": "[1,2]",
+      "cryptocharts.drawings.v1:ETH-USD": "[9]",
+    });
+  });
+
+  it("drops what this browser removed", () => {
+    expect(
+      mergeWorkspaces({ "cryptocharts.a": "1", "cryptocharts.b": "2" }, { "cryptocharts.a": "1" }, {}),
+    ).toEqual({ "cryptocharts.b": "2" });
   });
 });

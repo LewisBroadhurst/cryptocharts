@@ -17,7 +17,10 @@ function fakeStratDeck(answer: unknown | Error) {
     });
     if (answer instanceof Error) throw answer;
     if ((init.method ?? "GET") === "PUT")
-      return new Response(JSON.stringify({ saved: true }), { status: 200 });
+      return new Response(
+        JSON.stringify({ saved: true, updatedAt: `2026-11-20T12:00:0${calls.length}.000Z` }),
+        { status: 200 },
+      );
     return new Response(JSON.stringify(answer), { status: 200 });
   });
   return calls;
@@ -60,7 +63,10 @@ describe("AccountBadge", () => {
       .element(screen.getByRole("link", { name: "Saved to Lewis's StratDeck account" }))
       .toBeVisible();
     const put = calls.find((call) => call.method === "PUT")!;
-    expect(JSON.parse(put.body!)).toEqual({ data: { "cryptocharts.layout.v1": '{"interval":"4h"}' } });
+    expect(JSON.parse(put.body!)).toEqual({
+      data: { "cryptocharts.layout.v1": '{"interval":"4h"}' },
+      baseUpdatedAt: null,
+    });
   });
 
   it("saves again when the charts change", async () => {
@@ -79,6 +85,8 @@ describe("AccountBadge", () => {
     localStorage.setItem("cryptocharts.layout.v1", "b");
     vi.advanceTimersByTime(4_000);
     await expect.poll(() => calls.filter((call) => call.method === "PUT").length).toBe(1);
+    const put = calls.find((call) => call.method === "PUT")!;
+    expect(JSON.parse(put.body!).baseUpdatedAt).toBe("2026-11-20T12:00:00Z");
     vi.useRealTimers();
   });
 });

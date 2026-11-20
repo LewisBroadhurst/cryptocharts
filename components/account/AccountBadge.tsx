@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   applySaved,
   fetchAccount,
+  mergeWorkspaces,
   onSignIn,
   sameWorkspace,
   saveWorkspace,
@@ -56,15 +57,35 @@ export default function AccountBadge() {
           return;
         }
       }
-      if (next === "upload") await saveWorkspace(local);
+      // What this browser last saved, and when, so a save never lands over a
+      // newer one from another device unseen.
+      let base = account.updatedAt;
+      let sent = account.data ?? {};
+      let saving = false;
+      const save = async (now: Record<string, string>) => {
+        saving = true;
+        let outcome = await saveWorkspace(now, base);
+        if (outcome.kind === "conflict") {
+          const merged = mergeWorkspaces(outcome.data, sent, now);
+          applySaved(localStorage, merged);
+          base = outcome.updatedAt;
+          now = merged;
+          outcome = await saveWorkspace(merged, base);
+        }
+        if (outcome.kind === "saved") {
+          base = outcome.updatedAt;
+          sent = now;
+        }
+        saving = false;
+      };
+      if (next === "upload") await save(local);
       if (!live) return;
       setState({ kind: "signed-in", name: account.name });
-      let sent = snapshot(localStorage);
       timer = setInterval(() => {
+        if (saving) return;
         const now = snapshot(localStorage);
         if (sameWorkspace(now, sent)) return;
-        sent = now;
-        void saveWorkspace(now);
+        void save(now);
       }, SAVE_EVERY_MS);
     })();
     return () => {
