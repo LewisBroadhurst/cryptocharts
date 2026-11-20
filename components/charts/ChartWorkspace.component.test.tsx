@@ -265,6 +265,83 @@ describe("the chart's exchange menu", () => {
   });
 });
 
+describe("the chart's replay", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  async function clickBar(fx: number) {
+    const host = document.querySelector<HTMLElement>(".touch-none > div")!;
+    const box = host.getBoundingClientRect();
+    await userEvent.click(page.elementLocator(host), {
+      position: { x: box.width * fx, y: box.height / 2 },
+    });
+  }
+  const shownTime = () =>
+    document.querySelector('[role="toolbar"][aria-label="Replay"] p')?.textContent ?? "";
+
+  it("starts at a picked bar, steps one bar at a time, and goes back to live", async () => {
+    const screen = await mount();
+    const newest = CANDLES.at(-1)!.close.toFixed(2);
+    // The legend shows the bar under the pointer, so read it with the pointer off the chart.
+    const legend = () => screen.getByRole("toolbar", { name: "Chart" }).element()
+      .parentElement!.textContent!;
+    const offChart = () =>
+      userEvent.hover(screen.getByRole("button", { name: "Indicators" }));
+    await offChart();
+    await expect.poll(legend).toContain(newest);
+    await screen.getByRole("button", { name: "Replay", exact: true }).click();
+    await expect.element(screen.getByText(/Click a bar to replay/)).toBeVisible();
+
+    await clickBar(0.4);
+    await offChart();
+    // The newest bar is out of sight, and so out of the legend.
+    await expect.poll(legend).not.toContain(newest);
+    const bar = screen.getByRole("toolbar", { name: "Replay" });
+    await expect.element(bar).toBeVisible();
+    await expect.element(screen.getByText(/Click a bar to replay/)).not.toBeInTheDocument();
+    const start = shownTime();
+    expect(start).toMatch(/\d{2}:\d{2}/);
+
+    await screen.getByRole("button", { name: "Forward one bar" }).click();
+    await expect.poll(shownTime).not.toBe(start);
+    await screen.getByRole("button", { name: "Back one bar" }).click();
+    await expect.poll(shownTime).toBe(start);
+
+    await screen.getByRole("button", { name: "Back to live" }).click();
+    await expect.element(bar).not.toBeInTheDocument();
+    await offChart();
+    await expect.poll(legend).toContain(newest);
+  });
+
+  it("plays forward on its own, and pauses", async () => {
+    const screen = await mount();
+    await screen.getByRole("button", { name: "Replay", exact: true }).click();
+    await clickBar(0.4);
+    const start = shownTime();
+
+    await screen.getByRole("button", { name: "10 bars a second" }).click();
+    await screen.getByRole("button", { name: "Play" }).click();
+    await expect.poll(shownTime).not.toBe(start);
+    await screen.getByRole("button", { name: "Pause" }).click();
+    const paused = shownTime();
+    await new Promise((done) => setTimeout(done, 400));
+    expect(shownTime()).toBe(paused);
+  });
+
+  it("forgets the pick when Escape is pressed", async () => {
+    const screen = await mount();
+    await screen.getByRole("button", { name: "Replay", exact: true }).click();
+    await expect.element(screen.getByText(/Click a bar to replay/)).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await expect.element(screen.getByText(/Click a bar to replay/)).not.toBeInTheDocument();
+    await clickBar(0.4);
+    await expect
+      .element(screen.getByRole("toolbar", { name: "Replay" }))
+      .not.toBeInTheDocument();
+  });
+});
+
 describe("the chart's full screen", () => {
   it("fills the screen with the chart and its tips, and gives the screen back", async () => {
     const screen = await mount();

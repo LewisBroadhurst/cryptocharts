@@ -260,6 +260,40 @@ export const TrashIcon = ({ className = "size-5" }: { className?: string }) => (
   </Icon>
 );
 
+export const ReplayIcon = ({ className = "size-5" }: { className?: string }) => (
+  <Icon className={className}>
+    <path d="M4 5v5h5" />
+    <path d="M4.6 10A8 8 0 1 1 6 16.9" />
+    <path d="m11 9 4 3-4 3z" />
+  </Icon>
+);
+
+export const PlayIcon = ({ className = "size-5" }: { className?: string }) => (
+  <Icon className={className}>
+    <path d="M7 5v14l11-7z" />
+  </Icon>
+);
+
+export const PauseIcon = ({ className = "size-5" }: { className?: string }) => (
+  <Icon className={className}>
+    <path d="M8 5v14M16 5v14" />
+  </Icon>
+);
+
+export const StepForwardIcon = ({ className = "size-5" }: { className?: string }) => (
+  <Icon className={className}>
+    <path d="M6 6v12l9-6z" />
+    <path d="M18 6v12" />
+  </Icon>
+);
+
+export const StepBackIcon = ({ className = "size-5" }: { className?: string }) => (
+  <Icon className={className}>
+    <path d="M18 6v12L9 12z" />
+    <path d="M6 6v12" />
+  </Icon>
+);
+
 export const UndoIcon = ({ className = "size-5" }: { className?: string }) => (
   <Icon className={className}>
     <path d="M9 14 4 9l5-5" />

@@ -33,6 +33,14 @@ import {
 } from "@/lib/charts/chart-storage";
 import type { Drawing, DrawingKind } from "@/lib/charts/drawings";
 import {
+  barsUpTo,
+  indexAtOrBefore,
+  nextBarTime,
+  previousBarTime,
+  type Replay,
+  type ReplaySpeed,
+} from "@/lib/charts/replay";
+import {
   isPaneStudy,
   RSI_LEVELS,
   shapeSettings,
@@ -47,6 +55,7 @@ import { SOURCES, type Exchange } from "@/lib/market/sources";
 import { cn } from "@/lib/utils";
 import HoverTip from "@/components/base/HoverTip";
 import PairPicker from "@/components/charts/PairPicker";
+import ReplayBar from "@/components/charts/ReplayBar";
 import {
   addMain,
   addStudySeries,
@@ -71,6 +80,7 @@ import {
   IndicatorsIcon,
   LockIcon,
   RedoIcon,
+  ReplayIcon,
   StyleIcon,
   UndoIcon,
 } from "@/components/charts/ChartIcons";
@@ -161,11 +171,26 @@ export default function ChartWorkspace({
   const colorRef = useRef<string | null>(null);
 
   const { interval, style, studies, magnet } = layout;
-  const { candles, error, status, loadOlder, loadingOlder } = useMarketBars(
-    pair,
-    interval,
-    exchange,
-  );
+  const {
+    candles: allCandles,
+    error,
+    status,
+    loadOlder,
+    loadingOlder,
+  } = useMarketBars(pair, interval, exchange);
+  const [replay, setReplay] = useState<Replay | null>(null);
+  const [picking, setPicking] = useState(false);
+  // A replay shows no bar after its own; before the oldest bar it shows that one.
+  const replayAt = replay?.at;
+  const candles = useMemo(() => {
+    if (replayAt === undefined) return allCandles;
+    const shown = barsUpTo(allCandles, replayAt);
+    return shown.length > 0 ? shown : allCandles.slice(0, 1);
+  }, [allCandles, replayAt]);
+  const allRef = useRef(allCandles);
+  useEffect(() => {
+    allRef.current = allCandles;
+  }, [allCandles]);
   const [seriesMade, setSeriesMade] = useState(0);
   const drawnRef = useRef<{ key: string; first: number; length: number } | null>(
     null,
@@ -400,6 +425,75 @@ export default function ChartWorkspace({
     }
   }, [candles, clock, style, viewKey, precision, price, seriesMade]);
 
+  // Picking where a replay starts: the next click on a bar starts it there,
+  // with that bar the newest one shown.
+  const startReplay = useCallback((time: number) => {
+    const chart = chartRef.current;
+    const all = allRef.current;
+    const at = indexAtOrBefore(all, time);
+    if (at < 0) return;
+    setPicking(false);
+    setReplay((now) => ({
+      at: all[at].time,
+      playing: false,
+      speed: now?.speed ?? 1,
+    }));
+    if (chart) {
+      const span = chart.timeScale().getVisibleLogicalRange();
+      const width = span ? Math.max(20, span.to - span.from) : OPENING_BARS;
+      chart.timeScale().setVisibleLogicalRange({
+        from: at - (width - RIGHT_GAP),
+        to: at + RIGHT_GAP,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || !picking) return;
+    const onClick = (param: MouseEventParams) => {
+      if (param.time !== undefined) startReplay(param.time as number);
+    };
+    chart.subscribeClick(onClick);
+    return () => chart.unsubscribeClick(onClick);
+  }, [picking, startReplay]);
+
+  const stepReplay = useCallback((by: 1 | -1) => {
+    setReplay((now) => {
+      if (!now) return now;
+      const all = allRef.current;
+      const next =
+        by === 1 ? nextBarTime(all, now.at) : previousBarTime(all, now.at);
+      return next === null ? now : { ...now, at: next };
+    });
+  }, []);
+
+  const exitReplay = useCallback(() => {
+    setReplay(null);
+    setPicking(false);
+    requestAnimationFrame(() => chartRef.current?.timeScale().scrollToRealTime());
+  }, []);
+
+  // Playing steps one bar at a time and pauses on catching up.
+  const playing = replay?.playing ?? false;
+  const speed = replay?.speed ?? 1;
+  useEffect(() => {
+    if (!playing) return;
+    const timer = setInterval(() => {
+      setReplay((now) => {
+        if (!now) return now;
+        const next = nextBarTime(allRef.current, now.at);
+        return next === null ? { ...now, playing: false } : { ...now, at: next };
+      });
+    }, 1_000 / speed);
+    return () => clearInterval(timer);
+  }, [playing, speed]);
+
+  const caughtUp =
+    replay !== null && nextBarTime(allCandles, replay.at) === null;
+  const atStart =
+    replay !== null && previousBarTime(allCandles, replay.at) === null;
+
   // Scrolling back near the oldest bar fetches older ones, where the exchange
   // has them.
   useEffect(() => {
@@ -607,6 +701,20 @@ export default function ChartWorkspace({
         redo();
         return;
       }
+      if (event.key === "Escape" && picking) {
+        setPicking(false);
+        return;
+      }
+      if (replay && event.shiftKey && !mod && event.key === "ArrowRight") {
+        event.preventDefault();
+        stepReplay(1);
+        return;
+      }
+      if (replay && event.shiftKey && !mod && event.key === "ArrowLeft") {
+        event.preventDefault();
+        stepReplay(-1);
+        return;
+      }
       if (event.key === "Escape") {
         if (controllerRef.current?.cancelPlacing()) return;
         if (tool) setTool(null);
@@ -630,7 +738,7 @@ export default function ChartWorkspace({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo, tool, setTool, picked, removeSelected]);
+  }, [undo, redo, tool, setTool, picked, removeSelected, picking, replay, stepReplay]);
 
   useEffect(() => {
     chartRef.current?.priceScale("right").applyOptions({
@@ -819,6 +927,34 @@ export default function ChartWorkspace({
           <IndicatorsIcon className="size-5" />
           <span className="max-sm:hidden">Indicators</span>
         </button>
+        <HoverTip
+          control
+          tip={
+            replay
+              ? "Back to live"
+              : "Replay: pick a bar, then play the chart forward from it"
+          }
+        >
+          <button
+            type="button"
+            aria-pressed={picking || replay !== null}
+            onClick={() => {
+              if (replay) exitReplay();
+              else {
+                setTool(null);
+                setPicking((now) => !now);
+              }
+            }}
+            className={cn(
+              BAR_BUTTON,
+              "shrink-0",
+              (picking || replay) && BAR_ON,
+            )}
+          >
+            <ReplayIcon className="size-5" />
+            <span className="max-sm:hidden">Replay</span>
+          </button>
+        </HoverTip>
         <div className="shrink-0 sm:hidden">
           <ToolMenu
             {...rail}
@@ -883,7 +1019,10 @@ export default function ChartWorkspace({
         <div className="relative min-w-0 flex-1 touch-none select-none">
           <div
             ref={host}
-            className={cn("absolute inset-0", tool && "cursor-crosshair")}
+            className={cn(
+              "absolute inset-0",
+              (tool || picking) && "cursor-crosshair",
+            )}
           />
           <ChartLegend
             symbol={pair.id}
@@ -911,6 +1050,29 @@ export default function ChartWorkspace({
               drawing={picked}
               onChange={changeDrawing}
               onRemove={removeSelected}
+            />
+          )}
+          {picking && (
+            <p
+              role="status"
+              className="pointer-events-none absolute top-2 left-1/2 z-20 -translate-x-1/2 rounded-md border border-border-strong bg-popover px-2.5 py-1.5 text-xs text-foreground shadow-popover"
+            >
+              Click a bar to replay from it. Esc to cancel.
+            </p>
+          )}
+          {replay && (
+            <ReplayBar
+              replay={replay}
+              caughtUp={caughtUp}
+              atStart={atStart}
+              onPlay={(on) =>
+                setReplay((now) => (now ? { ...now, playing: on } : now))
+              }
+              onStep={stepReplay}
+              onSpeed={(next: ReplaySpeed) =>
+                setReplay((now) => (now ? { ...now, speed: next } : now))
+              }
+              onExit={exitReplay}
             />
           )}
           {(candles.length === 0 || error) && (
@@ -959,7 +1121,7 @@ export default function ChartWorkspace({
             )}
           />
           <span className="sr-only">
-            {status === "live" ? "Live" : "Connecting"}
+            {replay ? "Replaying" : status === "live" ? "Live" : "Connecting"}
           </span>
           {loadingOlder ? "Loading older bars… · " : ""}Data from{" "}
           <a
