@@ -12,10 +12,13 @@ export const SHARE_IMAGE_SIZE = { width: 1200, height: 630 } as const;
 export const coinLabel = (pair: Pair): string =>
   pair.name === pair.base ? pair.name : `${pair.name} (${pair.base})`;
 
-/** The one address search engines should keep for a pair's chart: Bitcoin,
-    the chart the site opens on, lives at the root. */
-export const pairUrl = (pair: Pair): string =>
-  pair.id === DEFAULT_PAIR ? `${SITE_URL}/` : `${SITE_URL}/?pair=${pair.id}`;
+/** A pair's page: Bitcoin, the chart the site opens on, is the home page;
+    every other coin has its own, `/ethereum`. */
+export const pairPath = (pair: Pair): string =>
+  pair.id === DEFAULT_PAIR ? "/" : `/${pair.slug}`;
+
+/** The one address search engines should keep for a pair's chart. */
+export const pairUrl = (pair: Pair): string => `${SITE_URL}${pairPath(pair)}`;
 
 export const shareImagePath = (pair: Pair): string => `/og/${pair.id}`;
 
@@ -54,5 +57,37 @@ export function pairMetadata(pair: Pair): Metadata {
       description,
       images: [image],
     },
+  };
+}
+
+/** What a search engine reads about the page beyond its tags: a chart page
+    about the coin, inside the site. */
+export function pairStructuredData(pair: Pair) {
+  const url = pairUrl(pair);
+  const home = `${SITE_URL}/`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": url,
+        url,
+        name: `${coinLabel(pair)} live chart`,
+        description: pair.about,
+        inLanguage: "en-GB",
+        isPartOf: { "@type": "WebSite", "@id": home, url: home, name: SITE_NAME },
+        about: { "@type": "Thing", name: pair.name, alternateName: pair.base },
+        primaryImageOfPage: `${SITE_URL}${shareImagePath(pair)}`,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: SITE_NAME, item: home },
+          ...(url === home
+            ? []
+            : [{ "@type": "ListItem", position: 2, name: pair.name, item: url }]),
+        ],
+      },
+    ],
   };
 }

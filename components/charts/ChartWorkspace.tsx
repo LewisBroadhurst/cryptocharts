@@ -91,6 +91,7 @@ import {
   UndoIcon,
 } from "@/components/charts/ChartIcons";
 import { useDrawingHistory } from "@/components/charts/useDrawingHistory";
+import { exchangeInAddress, workspaceSearch } from "@/components/charts/workspaceAddress";
 import { WORKSPACE_FRAME } from "@/components/charts/workspaceStyles";
 import { useMarketBars } from "@/hooks/useMarketBars";
 
@@ -123,13 +124,14 @@ const isTyping = (target: EventTarget | null) =>
 
 export default function ChartWorkspace({
   initialPair,
-  initialExchange,
+  onPickPair,
 }: {
   initialPair: string;
-  initialExchange: Exchange;
+  /** Another coin was picked: its page shows it. */
+  onPickPair: (pair: Pair) => void;
 }) {
-  const [symbol, setSymbol] = useState(() => pairFor(initialPair).id);
-  const [exchange, setExchange] = useState<Exchange>(initialExchange);
+  const symbol = pairFor(initialPair).id;
+  const [exchange, setExchange] = useState<Exchange>(exchangeInAddress);
   const pair = pairById(symbol) ?? pairFor(undefined);
   const source = SOURCES[exchange];
   const frame = useRef<HTMLDivElement>(null);
@@ -154,7 +156,7 @@ export default function ChartWorkspace({
   };
   const [layout, setLayout] = useState<ChartLayout>(loadLayout);
   const history = useDrawingHistory(() => loadDrawings(symbol));
-  const { drawings, commit, reset } = history;
+  const { drawings, commit } = history;
   const [selected, setSelected] = useState<string | null>(null);
   const [tool, setToolNow] = useState<DrawingKind | null>(null);
   const [drawingsHidden, setDrawingsHidden] = useState(false);
@@ -251,21 +253,17 @@ export default function ChartWorkspace({
   }, []);
 
   const pickPair = (next: Pair) => {
-    if (next.id === symbol) return;
-    setSymbol(next.id);
-    reset(loadDrawings(next.id));
-    setSelected(null);
-    setToolNow(null);
+    if (next.id !== symbol) onPickPair(next);
   };
 
-  // The address names the pair and exchange shown, so it can be shared.
+  // The page names the coin; the address keeps only an exchange that isn't
+  // the default, so it can be shared as it is.
   useEffect(() => {
     const url = new URL(window.location.href);
-    url.searchParams.set("pair", symbol);
-    url.searchParams.set("ex", exchange);
+    url.search = workspaceSearch(exchange);
     if (url.href !== window.location.href)
       window.history.replaceState(window.history.state, "", url);
-  }, [symbol, exchange]);
+  }, [exchange]);
 
   // Where each lower pane starts, for its legend line: a pane moves when one
   // above it comes or goes, the chart resizes or a reader drags a divider.

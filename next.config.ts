@@ -1,3 +1,7 @@
+import type { NextConfig } from "next";
+
+import { legacyRedirects } from "./lib/site/legacy-redirects";
+
 const dev = process.env.NODE_ENV !== "production";
 
 // Every host the page may talk to. Prices come straight from the exchanges;
@@ -25,11 +29,11 @@ const CSP = [
   "object-src 'none'",
 ].join("; ");
 
-/** @type {import('next').NextConfig} */
-const config = {
+const config: NextConfig = {
   // The shared look and UI primitives ship as TypeScript source.
   transpilePackages: ["@big-shared/ui"],
   poweredByHeader: false,
+  redirects: async () => legacyRedirects(),
   reactStrictMode: true,
   headers: async () => [
     {

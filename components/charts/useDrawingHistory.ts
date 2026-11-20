@@ -11,8 +11,7 @@ type History = { now: Drawing[]; past: Drawing[][]; future: Drawing[][] };
 type Action =
   | { type: "commit"; drawings: Drawing[] }
   | { type: "undo" }
-  | { type: "redo" }
-  | { type: "reset"; drawings: Drawing[] };
+  | { type: "redo" };
 
 function reduce(state: History, action: Action): History {
   switch (action.type) {
@@ -37,8 +36,6 @@ function reduce(state: History, action: Action): History {
       if (!after) return state;
       return { now: after, past: [...state.past, state.now], future: rest };
     }
-    case "reset":
-      return { now: action.drawings, past: [], future: [] };
   }
 }
 
@@ -58,9 +55,5 @@ export function useDrawingHistory(first: () => Drawing[]) {
     ),
     undo: useCallback(() => dispatch({ type: "undo" }), []),
     redo: useCallback(() => dispatch({ type: "redo" }), []),
-    reset: useCallback(
-      (drawings: Drawing[]) => dispatch({ type: "reset", drawings }),
-      [],
-    ),
   };
 }

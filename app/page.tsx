@@ -1,50 +1,17 @@
-import AccountBadge from "@/components/account/AccountBadge";
-import LazyChartWorkspace from "@/components/charts/LazyChartWorkspace";
 import type { Metadata } from "next";
 
-import { pairFor } from "@/lib/market/pairs";
-import { usableExchange } from "@/lib/market/sources";
+import PairPage from "@/components/site/PairPage";
+import { DEFAULT_PAIR, pairById } from "@/lib/market/pairs";
 import { pairMetadata } from "@/lib/site/seo";
 
-type Props = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
+// Built once, then again at most every 15 minutes, for the figures under the chart.
+export const revalidate = 900;
 
-export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  return pairMetadata(pairFor((await searchParams).pair));
-}
+const BITCOIN = pairById(DEFAULT_PAIR)!;
 
-export default async function Home({ searchParams }: Props) {
-  const asked = await searchParams;
-  const pair = pairFor(asked.pair);
-  const exchange = usableExchange(asked.ex);
+export const metadata: Metadata = pairMetadata(BITCOIN);
 
-  return (
-    <div className="flex h-dvh flex-col gap-2 p-2 sm:p-3">
-      <header className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
-        <h1 className="text-base font-semibold text-foreground">
-          Crypto Charts
-          <span className="ml-2 font-normal text-muted-foreground max-sm:hidden">
-            Live charts for the top coins, free
-          </span>
-        </h1>
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <AccountBadge />
-          <a
-            href="https://www.stratdeck.uk"
-            className="text-sm text-subtle-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
-            Charting stocks? Try StratDeck
-          </a>
-        </div>
-      </header>
-      <main className="flex min-h-0 flex-1 flex-col">
-        <LazyChartWorkspace initialPair={pair.id} initialExchange={exchange} />
-      </main>
-      <footer className="shrink-0 px-1 text-xs text-muted-foreground">
-        Charts and prices for information only, not advice or an offer to buy or
-        sell anything. Prices come from the exchange shown on the chart.
-      </footer>
-    </div>
-  );
+/** The home page is Bitcoin's chart. */
+export default function Home() {
+  return <PairPage pair={BITCOIN} />;
 }

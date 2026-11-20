@@ -16,7 +16,7 @@ async function expectChart(page: Page, pair: string) {
   });
   await expect(page.getByText(/Couldn't load/)).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Kraken" })).toBeVisible();
-  await expect(page.getByText("Live")).toBeAttached({ timeout: 30_000 });
+  await expect(page.getByText("Live", { exact: true })).toBeAttached({ timeout: 30_000 });
 }
 
 test("Bitcoin loads from Kraken and goes live", async ({ page }) => {
@@ -26,9 +26,37 @@ test("Bitcoin loads from Kraken and goes live", async ({ page }) => {
   expect(blocked).toEqual([]);
 });
 
-test("a shared link to Ethereum loads it", async ({ page }) => {
+test("Ethereum's page loads its chart, with a heading and text a search engine can read", async ({ page }) => {
+  const blocked = watchPolicy(page);
+  await page.goto("/ethereum");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Ethereum (ETH) live chart");
+  await expect(page.getByRole("heading", { name: "About Ethereum (ETH)" })).toBeAttached();
+  await expectChart(page, "ETH-USD");
+  expect(blocked).toEqual([]);
+});
+
+test("an old link to a coin goes to its page for good, and the address tidies", async ({ page }) => {
+  const response = await page.request.get("/?pair=eth-usd&ex=kraken", { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  expect(response.headers().location).toMatch(/^\/ethereum\?/);
+
   await page.goto("/?pair=ETH-USD&ex=kraken");
   await expectChart(page, "ETH-USD");
+  await expect(page).toHaveURL(/\/ethereum$/);
+});
+
+test("picking another coin goes to its page", async ({ page }) => {
+  await page.goto("/");
+  await expectChart(page, "BTC-USD");
+  await page.getByRole("button", { name: /^Pair: BTC-USD/ }).click();
+  await page.getByRole("textbox", { name: "Search coins" }).fill("sol");
+  await page.getByRole("button", { name: /SOL/ }).click();
+  await expect(page).toHaveURL(/\/solana$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Solana (SOL) live chart");
+  await expectChart(page, "SOL-USD");
+
+  await page.goBack();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Bitcoin (BTC) live chart");
 });
 
 test("an old link to Coinbase opens on Kraken and never calls Coinbase", async ({ page }) => {
