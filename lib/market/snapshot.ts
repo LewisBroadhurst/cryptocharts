@@ -71,14 +71,21 @@ async function askKraken(pair: Pair): Promise<Snapshot | null> {
   }
 }
 
-/** The coin's figures from Kraken, or null if Kraken can't be reached in time:
-    the page then goes without them rather than failing. A build asks for every
-    coin at once, so one refusal (a rate limit, say) gets one more try. */
-export async function fetchSnapshot(pair: Pair, retryAfterMs = 1_000): Promise<Snapshot | null> {
+/** The coin's figures from Kraken. A build asks for every coin at once, so a
+    refusal (a rate limit, say) gets one more try. If Kraken still can't be
+    reached, a build goes without the figures rather than failing; a refresh of
+    a live page throws instead, so Next keeps the page it has, figures and all. */
+export async function fetchSnapshot(
+  pair: Pair,
+  retryAfterMs = 1_000,
+  building = process.env.NEXT_PHASE === "phase-production-build",
+): Promise<Snapshot | null> {
   const first = await askKraken(pair);
   if (first) return first;
   await new Promise((resolve) => setTimeout(resolve, retryAfterMs));
-  return askKraken(pair);
+  const second = await askKraken(pair);
+  if (second || building) return second;
+  throw new Error(`Kraken's ticker for ${pair.id} couldn't be reached`);
 }
 
 const USD = new Map<number, Intl.NumberFormat>();

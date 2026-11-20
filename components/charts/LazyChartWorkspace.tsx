@@ -31,7 +31,11 @@ export default function LazyChartWorkspace({ pair }: { pair: string }) {
   return (
     <ChartWorkspace
       pair={pair}
-      onPickPair={(next: Pair) => router.push(`${pairPath(next)}${workspaceSearch()}`)}
+      // The chart is where the reader is: stay there rather than scroll to the
+      // new page's text.
+      onPickPair={(next: Pair) =>
+        router.push(`${pairPath(next)}${workspaceSearch()}`, { scroll: false })
+      }
     />
   );
 }

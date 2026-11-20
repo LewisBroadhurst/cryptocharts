@@ -70,17 +70,22 @@ describe("fetchSnapshot", () => {
       .mockResolvedValueOnce(Response.json({ error: ["EGeneral:Too many requests"] }))
       .mockResolvedValueOnce(Response.json(TICKER));
     vi.stubGlobal("fetch", fetch);
-    expect((await fetchSnapshot(pairFor("BTC-USD"), 0))?.price).toBe(97010);
+    expect((await fetchSnapshot(pairFor("BTC-USD"), 0, false))?.price).toBe(97010);
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
-  it("gives nothing, rather than failing the page, when Kraken can't be reached or says no", async () => {
+  it("builds without the figures, rather than failing, when Kraken can't be reached or says no", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("fetch failed"); }));
-    expect(await fetchSnapshot(pairFor("ETH-USD"), 0)).toBeNull();
+    expect(await fetchSnapshot(pairFor("ETH-USD"), 0, true)).toBeNull();
     const busy = vi.fn(async () => new Response("busy", { status: 503 }));
     vi.stubGlobal("fetch", busy);
-    expect(await fetchSnapshot(pairFor("ETH-USD"), 0)).toBeNull();
+    expect(await fetchSnapshot(pairFor("ETH-USD"), 0, true)).toBeNull();
     expect(busy).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails a live page's refresh instead, so the page keeps its last figures", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("busy", { status: 503 })));
+    await expect(fetchSnapshot(pairFor("ETH-USD"), 0, false)).rejects.toThrow(/ETH-USD/);
   });
 });
 
