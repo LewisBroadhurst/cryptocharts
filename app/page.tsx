@@ -1,3 +1,4 @@
+import AccountBadge from "@/components/account/AccountBadge";
 import LazyChartWorkspace from "@/components/charts/LazyChartWorkspace";
 import { pairFor } from "@/lib/market/pairs";
 import { usableExchange } from "@/lib/market/sources";
@@ -20,12 +21,15 @@ export default async function Home({
             Free live charts for the main coins
           </span>
         </h1>
-        <a
-          href="https://www.stratdeck.uk"
-          className="text-sm text-subtle-foreground underline-offset-2 hover:text-foreground hover:underline"
-        >
-          Researching stocks? Try StratDeck
-        </a>
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <AccountBadge />
+          <a
+            href="https://www.stratdeck.uk"
+            className="text-sm text-subtle-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Researching stocks? Try StratDeck
+          </a>
+        </div>
       </header>
       <main className="flex min-h-0 flex-1 flex-col">
         <LazyChartWorkspace initialPair={pair.id} initialExchange={exchange} />

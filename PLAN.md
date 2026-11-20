@@ -124,13 +124,18 @@ hostile script (reads cookies, calls fetch, loops forever) can do nothing but be
 
 Only once there is something worth syncing across devices.
 
-- StratDeck side: a small endpoint that, for a signed-in reader, returns a short-lived token signed with a private key
-  that never leaves StratDeck. This is a change to the StratDeck repo.
-- Charts side: holds only the matching public key (safe in a public repo), checks the token, learns "user 123" and
-  nothing else.
-- Saved layouts and scripts sync through a small StratDeck endpoint, or a separate small database holding only the
-  charts site's own tables, under a role with no access to StratDeck's.
-- Never shared: StratDeck's `AUTH_SECRET`, its database URL, or a cookie set across all of `*.stratdeck.uk`.
+Built more simply than first planned: no tokens or keys at all. The two sites share a registrable domain
+(stratdeck.uk), so the reader's browser can call StratDeck directly with StratDeck's own session cookie, which this
+site never sees.
+
+- StratDeck side: `GET`/`PUT /api/charts-site/workspace` keeps the reader's workspace (this site's `cryptocharts.*`
+  browser settings: layouts, drawings, backtest script and costs) in a `chart_workspace` table. CORS answers only
+  `https://cryptocharts.stratdeck.uk`; a save from any other origin is refused before the session is read. A
+  `/cryptocharts` route on StratDeck sends a reader back here after its sign-in, with only the pair and exchange.
+- Charts side: "Sign in with StratDeck" goes to StratDeck's sign-in and back. Signed in, an empty account takes this
+  browser's work; an account with saved work replaces this browser's, once; after that changes save every few
+  seconds. If StratDeck can't be reached, nothing shows and the charts work as before.
+- Never shared: StratDeck's `AUTH_SECRET`, its database URL, or any cookie. This project's settings hold no secret.
 
 **Done when:** a reader signs in with their StratDeck account and sees their layouts on a second device, and the charts
 project's settings hold no StratDeck secret.

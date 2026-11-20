@@ -6,6 +6,8 @@ const CONNECT = [
   "'self'",
   // Coinbase joins once it consents (lib/market/sources.ts).
   "https://api.kraken.com",
+  // Saving the reader's workspace to their StratDeck account (lib/account).
+  "https://www.stratdeck.uk",
   "wss://ws.kraken.com",
 ];
 
