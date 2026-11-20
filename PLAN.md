@@ -151,3 +151,23 @@ All on GitHub Actions' free hosted runners.
 - The product name: "StratDeck Crypto Charts", "ChartDeck" or something else. The subdomain doesn't have to match.
 - Whether to add a licence later (MIT if you want others to reuse it).
 - Whether issues and pull requests from strangers are open, or turned off with a note in the README.
+
+## Optional: deeper history from Kraken's downloadable files
+
+Kraken's API serves only the newest 720 bars per interval: 12 hours of 1-minute bars, 30 days of hourly, about two years
+of daily. That limits replay and makes backtests short. Kraken also publishes its full trade-by-trade history (OHLCVT)
+as downloadable CSV files per pair, back to each pair's listing (2013 for Bitcoin). Covered by the same permission
+request as the API data (sent 20 November 2026); start only once Kraken has said yes.
+
+- A scheduled GitHub Actions job downloads Kraken's files, builds bars for each pair and interval, and writes them as
+  compact files (one per pair, interval and year or month) to Vercel Blob or Cloudflare R2. No database.
+- The site serves those files from its own domain with long caching, so the page's security policy still names only
+  the site and Kraken.
+- The Kraken adapter reads older bars from the files and newer ones from the API, joining where they meet, and sets
+  `pagesBack`, so scrolling back and backtests get years of bars.
+- The same job tops the files up daily; the API covers the gap to now.
+- Size check first: 1-minute bars for 14 pairs since 2013 run to a few hundred MB; 5-minute and up are far smaller.
+  1-minute may stay limited to recent years.
+
+**Done when:** BTC/USD on 1h replays and backtests over several years, scrolling back loads older bars, and the files
+refresh daily without anyone touching them.
