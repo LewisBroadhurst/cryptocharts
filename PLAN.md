@@ -160,19 +160,55 @@ All on GitHub Actions' free hosted runners.
 ## Optional: deeper history from Kraken's downloadable files
 
 Kraken's API serves only the newest 720 bars per interval: 12 hours of 1-minute bars, 30 days of hourly, about two years
-of daily. That limits replay and makes backtests short. Kraken also publishes its full trade-by-trade history (OHLCVT)
-as downloadable CSV files per pair, back to each pair's listing (2013 for Bitcoin). Covered by the same permission
-request as the API data (sent 20 November 2026); start only once Kraken has said yes.
+of daily. That limits replay and makes backtests short.
 
-- A scheduled GitHub Actions job downloads Kraken's files, builds bars for each pair and interval, and writes them as
-  compact files (one per pair, interval and year or month) to Vercel Blob or Cloudflare R2. No database.
-- The site serves those files from its own domain with long caching, so the page's security policy still names only
-  the site and Kraken.
-- The Kraken adapter reads older bars from the files and newer ones from the API, joining where they meet, and sets
-  `pagesBack`, so scrolling back and backtests get years of bars.
-- The same job tops the files up daily; the API covers the gap to now.
-- Size check first: 1-minute bars for 14 pairs since 2013 run to a few hundred MB; 5-minute and up are far smaller.
-  1-minute may stay limited to recent years.
+**Scoped 20 November 2026. Waiting on Kraken: see "Before building".**
+
+### Where the data comes from
+
+- **The archive.** Kraken publishes OHLCVT CSVs for every pair from the start of each market, on its own servers
+  (assets.kraken.com), as one full archive split into five parts, plus an incremental zip at the end of each quarter.
+  Each holds 1, 5, 15, 30, 60, 240, 720 and 1440-minute bars, no header row, and only intervals with trades (a missing
+  bar means no trades). Third-party write-ups put single files above 7 GB, so the full download is large; exact size
+  unknown until downloaded.
+- **The gap after the last quarter.** The archive ends at a quarter's end. The public `Trades` endpoint can fill from
+  there: `since` pages through every trade, 1,000 a call, with a delay of a second or two between calls. For 14 pairs
+  that is a one-off of hours, not days.
+- **Keeping it current.** The OHLC API's 720 one-minute bars cover 12 hours, so a job every 6 hours that stores them
+  never leaves a gap. Every larger interval can be built from 1-minute bars.
+
+### Size, for our 14 pairs
+
+Packed as compact binary (time plus five numbers, about 24 bytes a bar), before compression:
+
+- 1-minute: about 160 MB for Bitcoin since 2013, around 1 GB for all 14 pairs.
+- 5-minute: about a fifth of that, roughly 200 MB. 15-minute and up: tens of MB together.
+- So start with 5-minute and up (about 250 MB in all), and keep 1-minute to the last year or two.
+
+### Where to keep it
+
+- **Cloudflare R2**, recommended: stratdeck.uk's DNS is already on Cloudflare. 10 GB storage and egress free; a public
+  bucket on a subdomain such as `data.stratdeck.uk`, added to the page's `connect-src`. The job needs an R2 write
+  token as a GitHub Actions secret (stored in GitHub's settings, never in the repo).
+- Vercel Blob also works, but egress is billed and its host would also need adding to the policy.
+- GitHub release assets are free but can't be fetched from a browser (no CORS), so they'd need proxying.
+
+### How it would work
+
+- A one-off GitHub Actions job: download the archive, keep our 14 pairs, write one file per pair, interval and month,
+  fill to now from `Trades`, upload to R2.
+- A job every 6 hours: store the newest 1-minute bars from the API and rebuild the current month's files.
+- The Kraken adapter reads older bars from the files and newer ones from the API, joining where they meet, and turns
+  on `pagesBack`, so scrolling back, replay and backtests get years of bars.
+
+### Before building
+
+- **Kraken's answer.** The permission email told Kraken readers "can't download the raw data". Public history files
+  can be downloaded by anyone who finds their address, which is different from what was asked. Ask Kraken about this
+  specifically in the reply to their auto-response, and build only once they agree.
+- **Kraken's licence for the archive itself.** The support page for the files (support.kraken.com) couldn't be read
+  from here; check it for terms of use before downloading.
+- **A Cloudflare R2 bucket and token**, which only Lewis can create.
 
 **Done when:** BTC/USD on 1h replays and backtests over several years, scrolling back loads older bars, and the files
-refresh daily without anyone touching them.
+refresh every 6 hours without anyone touching them.
