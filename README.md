@@ -2,6 +2,9 @@
 
 Free, live crypto charts with drawing tools, indicators, replay and Python backtests that run in your own browser.
 
+Backtests run your Python in [Pyodide](https://pyodide.org) inside a sandboxed frame with its own origin and a
+policy that lets it load Pyodide from this site and reach nothing else (`app/sandbox/route.ts`).
+
 Prices come from Kraken. Coinbase is in the menu, locked, until Coinbase agrees to its prices being shown here.
 
 Coming to [cryptocharts.stratdeck.uk](https://cryptocharts.stratdeck.uk). Researching stocks? Try

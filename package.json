@@ -8,7 +8,9 @@
     "node": ">=22"
   },
   "scripts": {
+    "predev": "node tools/copy-pyodide.mjs",
     "dev": "next dev",
+    "prebuild": "node tools/copy-pyodide.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -24,6 +26,7 @@
     "clsx": "^2.1.1",
     "lightweight-charts": "5.2.0",
     "next": "16.4.5",
+    "pyodide": "314.0.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "tailwind-merge": "^3.7.0"

@@ -294,6 +294,12 @@ export const StepBackIcon = ({ className = "size-5" }: { className?: string }) =
   </Icon>
 );
 
+export const CodeIcon = ({ className = "size-5" }: { className?: string }) => (
+  <Icon className={className}>
+    <path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14" />
+  </Icon>
+);
+
 export const UndoIcon = ({ className = "size-5" }: { className?: string }) => (
   <Icon className={className}>
     <path d="M9 14 4 9l5-5" />

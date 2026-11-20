@@ -3,6 +3,7 @@
 import {
   ColorType,
   createChart,
+  createSeriesMarkers,
   CrosshairMode,
   LineStyle,
   PriceScaleMode,
@@ -10,7 +11,9 @@ import {
   type ISeriesApi,
   type Logical,
   type MouseEventParams,
+  type SeriesMarker,
   type SeriesType,
+  type Time,
   type UTCTimestamp,
 } from "lightweight-charts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +34,7 @@ import {
   saveLayout,
   type ChartLayout,
 } from "@/lib/charts/chart-storage";
+import type { BacktestResult } from "@/lib/backtest/engine";
 import type { Drawing, DrawingKind } from "@/lib/charts/drawings";
 import {
   barsUpTo,
@@ -54,6 +58,7 @@ import { pairById, pairFor, type Pair } from "@/lib/market/pairs";
 import { SOURCES, type Exchange } from "@/lib/market/sources";
 import { cn } from "@/lib/utils";
 import HoverTip from "@/components/base/HoverTip";
+import BacktestPanel from "@/components/charts/BacktestPanel";
 import PairPicker from "@/components/charts/PairPicker";
 import ReplayBar from "@/components/charts/ReplayBar";
 import {
@@ -81,6 +86,7 @@ import {
   LockIcon,
   RedoIcon,
   ReplayIcon,
+  CodeIcon,
   StyleIcon,
   UndoIcon,
 } from "@/components/charts/ChartIcons";
@@ -179,6 +185,12 @@ export default function ChartWorkspace({
     loadingOlder,
   } = useMarketBars(pair, interval, exchange);
   const [replay, setReplay] = useState<Replay | null>(null);
+  const [backtestOpen, setBacktestOpen] = useState(false);
+  // A result belongs to the bars it ran on: another pair or interval drops it.
+  const [backtest, setBacktest] = useState<{
+    key: string;
+    result: BacktestResult;
+  } | null>(null);
   const [picking, setPicking] = useState(false);
   // A replay shows no bar after its own; before the oldest bar it shows that one.
   const replayAt = replay?.at;
@@ -424,6 +436,46 @@ export default function ChartWorkspace({
       });
     }
   }, [candles, clock, style, viewKey, precision, price, seriesMade]);
+
+  // The backtest's trades on the price: entries as arrows, exits with their
+  // return. In a replay, only those up to the replay's bar.
+  const testResult =
+    backtest && backtest.key === viewKey && backtest.result.ok
+      ? backtest.result
+      : null;
+  const lastShown = candles.at(-1)?.time;
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main || !testResult || lastShown === undefined) return;
+    const marks: SeriesMarker<Time>[] = [];
+    const entry = (time: number, side: "long" | "short") =>
+      marks.push({
+        time: time as UTCTimestamp,
+        position: side === "long" ? "belowBar" : "aboveBar",
+        shape: side === "long" ? "arrowUp" : "arrowDown",
+        color: side === "long" ? "#34d399" : "#fb7185",
+        text: side === "long" ? "Buy" : "Sell",
+      });
+    for (const trade of testResult.trades) {
+      entry(trade.entryTime, trade.side);
+      marks.push({
+        time: trade.exitTime as UTCTimestamp,
+        position: trade.side === "long" ? "aboveBar" : "belowBar",
+        shape: "circle",
+        color: "#a3a3a3",
+        text: `${trade.returnPct >= 0 ? "+" : "−"}${Math.abs(trade.returnPct).toFixed(1)}%`,
+      });
+    }
+    if (testResult.openTrade)
+      entry(testResult.openTrade.entryTime, testResult.openTrade.side);
+    const plugin = createSeriesMarkers(
+      main,
+      marks
+        .filter((mark) => (mark.time as number) <= lastShown)
+        .sort((a, b) => (a.time as number) - (b.time as number)),
+    );
+    return () => plugin.detach();
+  }, [testResult, lastShown, seriesMade]);
 
   // Picking where a replay starts: the next click on a bar starts it there,
   // with that bar the newest one shown.
@@ -955,6 +1007,17 @@ export default function ChartWorkspace({
             <span className="max-sm:hidden">Replay</span>
           </button>
         </HoverTip>
+        <HoverTip control tip="Backtest a Python strategy on these bars">
+          <button
+            type="button"
+            aria-pressed={backtestOpen}
+            onClick={() => setBacktestOpen((now) => !now)}
+            className={cn(BAR_BUTTON, "shrink-0", backtestOpen && BAR_ON)}
+          >
+            <CodeIcon className="size-5" />
+            <span className="max-sm:hidden">Backtest</span>
+          </button>
+        </HoverTip>
         <div className="shrink-0 sm:hidden">
           <ToolMenu
             {...rail}
@@ -1092,6 +1155,18 @@ export default function ChartWorkspace({
             </div>
           )}
         </div>
+        {backtestOpen && (
+          <BacktestPanel
+            bars={allCandles}
+            label={`${pair.id} · ${intervalLabel} · ${source.label}`}
+            upTo={replay ? (candles.at(-1)?.time ?? null) : null}
+            result={backtest?.key === viewKey ? backtest.result : null}
+            onResult={(result) =>
+              setBacktest(result ? { key: viewKey, result } : null)
+            }
+            onClose={() => setBacktestOpen(false)}
+          />
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-t border-border px-1.5 py-0.5 [scrollbar-width:none]">

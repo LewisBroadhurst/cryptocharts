@@ -29,7 +29,17 @@ const config = {
   reactStrictMode: true,
   headers: async () => [
     {
-      source: "/:path*",
+      // Pyodide's files, fetched by the backtest sandbox, whose origin is its own.
+      source: "/pyodide/:path*",
+      headers: [
+        { key: "Access-Control-Allow-Origin", value: "*" },
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        { key: "X-Content-Type-Options", value: "nosniff" },
+      ],
+    },
+    {
+      // Every page but the sandbox, which sets a stricter policy of its own.
+      source: "/:path((?!sandbox$|pyodide/).*)",
       headers: [
         { key: "Content-Security-Policy", value: CSP },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

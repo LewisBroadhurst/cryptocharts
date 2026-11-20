@@ -4,7 +4,7 @@ import nextTs from "eslint-config-next/typescript";
 const config = [
   ...next,
   ...nextTs,
-  { ignores: [".next/**", "out/**", "node_modules/**", "next-env.d.ts", "tools/**"] },
+  { ignores: [".next/**", "out/**", "node_modules/**", "next-env.d.ts", "tools/**", "public/pyodide/**"] },
 ];
 
 export default config;

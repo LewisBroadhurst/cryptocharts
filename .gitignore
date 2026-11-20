@@ -19,3 +19,6 @@ next-env.d.ts
 test-results/
 playwright-report/
 .claude/
+
+# Copied from node_modules by tools/copy-pyodide.mjs
+public/pyodide/
